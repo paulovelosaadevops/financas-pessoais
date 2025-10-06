@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: financas-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: financas
+      MYSQL_USER: financas
+      MYSQL_PASSWORD: financas
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./financas-web
+      dockerfile: Dockerfile
+    container_name: financas-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/financas
+      SPRING_DATASOURCE_USERNAME: financas
+      SPRING_DATASOURCE_PASSWORD: financas
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+
+  frontend:
+    build:
+      context: ./financas-frontend
+      dockerfile: Dockerfile
+    container_name: financas-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
