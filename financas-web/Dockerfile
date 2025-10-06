@@ -4,10 +4,10 @@ WORKDIR /app
 COPY . .
 RUN gradle clean build -x test
 
-# Etapa 2: rodar o JAR gerado
-FROM eclipse-temurin:17-jdk-alpine
+# Etapa 2: rodar o JAR gerado (imagem mais robusta que Alpine)
+FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
 ENV TZ=America/Sao_Paulo
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "app.jar"]
