@@ -4,10 +4,12 @@ WORKDIR /app
 COPY . .
 RUN gradle clean build -x test
 
-# Etapa 2: rodar o JAR gerado (imagem mais robusta que Alpine)
+# Etapa 2: rodar o JAR gerado (imagem mais robusta)
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
 ENV TZ=America/Sao_Paulo
-CMD ["java", "-jar", "app.jar"]
+
+# Usa shell em vez de JSON para garantir compatibilidade no Render
+CMD java -jar app.jar
