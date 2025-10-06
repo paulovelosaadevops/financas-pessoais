@@ -1,14 +1,15 @@
-# Imagem base com Java 17
-FROM openjdk:17-jdk-slim
-
-# Define o diretório de trabalho
+# Etapa 1: build do app usando Maven
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copia o jar gerado pelo Gradle/Maven
-COPY build/libs/financas-web-0.0.1-SNAPSHOT.jar app.jar
-
-# Porta padrão da sua aplicação (Spring Boot usa 8080)
+# Etapa 2: rodar o app com JAR gerado
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Comando para rodar o app
+ENV TZ=America/Sao_Paulo
 ENTRYPOINT ["java", "-jar", "app.jar"]
