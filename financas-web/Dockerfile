@@ -1,15 +1,13 @@
-# Etapa 1: build do app usando Maven
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+# Etapa 1: build da aplicação com Gradle
+FROM gradle:8.7-jdk17 AS build
 WORKDIR /app
-COPY pom.xml .
-RUN mvn dependency:go-offline
-COPY src ./src
-RUN mvn clean package -DskipTests
+COPY . .
+RUN gradle clean build -x test
 
-# Etapa 2: rodar o app com JAR gerado
+# Etapa 2: rodar o JAR gerado
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
 ENV TZ=America/Sao_Paulo
 ENTRYPOINT ["java", "-jar", "app.jar"]
