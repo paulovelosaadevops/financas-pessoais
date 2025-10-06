@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/dashboard")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class DashboardController {
 
     private final LancamentoRepository lancamentoRepository;

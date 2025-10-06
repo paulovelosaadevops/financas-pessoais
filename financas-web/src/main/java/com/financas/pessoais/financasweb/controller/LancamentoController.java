@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/lancamentos")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class LancamentoController {
 
     private final LancamentoRepository repository;

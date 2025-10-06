@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/parametros")
-@CrossOrigin(origins = "http://localhost:5173") // libera o frontend (Vite) acessar a API
+@CrossOrigin(origins = "*") // libera o frontend (Vite) acessar a API
 public class ParametroController {
 
     private final CategoriaRepository categoriaRepository;
