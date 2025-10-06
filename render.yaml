@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: financas-backend
+    env: docker
+    rootDir: financas-web
+    dockerCommand: java -jar /app/app.jar
+    plan: free
