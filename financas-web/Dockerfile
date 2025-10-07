@@ -1,46 +1,46 @@
 # ===============================
-# Etapa 1: Build da aplicação com Gradle
+# 🔹 Etapa 1: Build com cache Gradle
 # ===============================
 FROM gradle:8.7-jdk17 AS build
 WORKDIR /app
 
-# Copia arquivos de build primeiro (para cache)
+# Copia apenas os arquivos de dependências para usar cache de camadas
 COPY build.gradle settings.gradle ./
 COPY gradle gradle
-RUN gradle clean --no-daemon
+RUN gradle dependencies --no-daemon || return 0
 
-# Copia o código do projeto
+# Agora copia o resto do código
 COPY . .
 
-# Build sem testes
-RUN gradle build -x test --no-daemon
+# Faz o build (sem testes)
+RUN gradle clean build -x test --no-daemon
 
 
 # ===============================
-# Etapa 2: Runtime com suporte gráfico ao Apache POI
+# 🔹 Etapa 2: Runtime leve com suporte gráfico (para Apache POI)
 # ===============================
-FROM openjdk:17-jdk-slim
-
+FROM openjdk:17-jdk-slim AS runtime
 WORKDIR /app
 
-# 🔹 Corrige o erro do Apache POI (precisa de fontes e suporte X11 para autoSizeColumn)
+# Instala apenas o mínimo necessário para autoSizeColumn do Apache POI
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libfreetype6 \
     fontconfig \
-    libx11-6 \
-    libxext6 \
-    libxi6 \
     fonts-dejavu-core \
+    libfreetype6 \
+    libxrender1 \
+    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Define timezone
+# Define timezone e encoding padrão
 ENV TZ=America/Sao_Paulo
+ENV LANG=pt_BR.UTF-8
+ENV LC_ALL=pt_BR.UTF-8
 
-# Copia o jar da etapa anterior
+# Copia o JAR gerado
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expor porta padrão
+# Exposição da porta padrão
 EXPOSE 8080
 
-# Executa
-CMD java -jar app.jar
+# Executa o app
+ENTRYPOINT ["java","-jar","app.jar"]
