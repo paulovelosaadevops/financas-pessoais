@@ -42,6 +42,11 @@ export default function Dashboard() {
     contaId: "",
   });
 
+  // 🔹 Listas carregadas apenas quando o modal é aberto
+  const [categorias, setCategorias] = useState([]);
+  const [responsaveis, setResponsaveis] = useState([]);
+  const [contas, setContas] = useState([]);
+
   useEffect(() => {
     carregarResumo();
   }, [mes, ano]);
@@ -55,6 +60,23 @@ export default function Dashboard() {
 
   const handleFiltroChange = (e) => {
     setFiltros({ ...filtros, [e.target.name]: e.target.value });
+  };
+
+  // 🔹 Quando abrir o modal, carrega listas
+  const abrirModalFiltros = async () => {
+    setShowFiltros(true);
+    try {
+      const [catRes, respRes, contRes] = await Promise.all([
+        api.get("/categorias"),
+        api.get("/responsaveis"),
+        api.get("/contas"),
+      ]);
+      setCategorias(catRes.data || []);
+      setResponsaveis(respRes.data || []);
+      setContas(contRes.data || []);
+    } catch (error) {
+      console.error("Erro ao carregar listas de filtros:", error);
+    }
   };
 
   // ✅ Exportar relatório com filtros
@@ -125,7 +147,7 @@ export default function Dashboard() {
         />
 
         <button
-          onClick={() => setShowFiltros(true)}
+          onClick={abrirModalFiltros}
           className="ml-auto bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
         >
           📊 Exportar Relatório ({meses[mes - 1]} {ano})
@@ -141,6 +163,7 @@ export default function Dashboard() {
             </h2>
 
             <div className="space-y-3">
+              {/* Tipo */}
               <select
                 name="tipo"
                 value={filtros.tipo}
@@ -152,29 +175,44 @@ export default function Dashboard() {
                 <option value="DESPESA">Despesas</option>
               </select>
 
-              <input
+              {/* Categoria */}
+              <select
                 name="categoriaId"
-                placeholder="ID da Categoria (opcional)"
                 value={filtros.categoriaId}
                 onChange={handleFiltroChange}
                 className="w-full bg-gray-700 p-2 rounded text-gray-100"
-              />
+              >
+                <option value="">Todas as categorias</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
 
-              <input
+              {/* Responsável */}
+              <select
                 name="responsavelId"
-                placeholder="ID do Responsável (opcional)"
                 value={filtros.responsavelId}
                 onChange={handleFiltroChange}
                 className="w-full bg-gray-700 p-2 rounded text-gray-100"
-              />
+              >
+                <option value="">Todos os responsáveis</option>
+                {responsaveis.map((r) => (
+                  <option key={r.id} value={r.id}>{r.nome}</option>
+                ))}
+              </select>
 
-              <input
+              {/* Conta */}
+              <select
                 name="contaId"
-                placeholder="ID da Conta (opcional)"
                 value={filtros.contaId}
                 onChange={handleFiltroChange}
                 className="w-full bg-gray-700 p-2 rounded text-gray-100"
-              />
+              >
+                <option value="">Todas as contas</option>
+                {contas.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
             </div>
 
             <div className="mt-5 flex gap-3">
@@ -238,11 +276,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔹 Gráficos e tabelas originais (sem mudanças) */}
-      {/* Abaixo segue exatamente como seu código anterior */}
-      {/* -------------------------------------------------- */}
-
-      {/* Gráficos Despesas Variáveis */}
+      {/* 🔹 Gráficos Despesas Variáveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
           <h2 className="text-lg font-semibold mb-4">Despesas Variáveis por Categoria</h2>
@@ -289,7 +323,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Despesas Fixas */}
+      {/* 🔹 Despesas Fixas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
           <h2 className="text-lg font-semibold mb-4">Despesas Fixas por Categoria</h2>
@@ -336,7 +370,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Receitas */}
+      {/* 🔹 Receitas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
           <h2 className="text-lg font-semibold mb-4">Receitas por Categoria</h2>
@@ -383,7 +417,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Gráfico mensal */}
+      {/* 🔹 Gráfico mensal */}
       <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
         <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (Mensal)</h2>
         <ResponsiveContainer width="100%" height={300}>
@@ -400,7 +434,7 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* Últimos lançamentos */}
+      {/* 🔹 Últimos lançamentos */}
       <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
         <h2 className="text-lg font-semibold mb-4">Últimos Lançamentos</h2>
         <table className="w-full text-left border-collapse">
