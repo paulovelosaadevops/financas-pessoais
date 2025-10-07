@@ -1,28 +1,42 @@
-# Etapa 1: build do front
+# ===============================
+# Etapa 1: Build com cache inteligente
+# ===============================
 FROM node:20 AS build
 WORKDIR /app
 
-# Copiar apenas os manifests primeiro
-COPY package*.json ./
+# Copiar apenas os arquivos de dependência
+COPY package.json package-lock.json* ./
 
-# Instalação limpa: ignora lockfile local e reconstrói dependências
+# Instalar dependências com cache aproveitável
 RUN npm install --legacy-peer-deps --no-package-lock
 
-# Copiar o resto do código
+# Copiar o código restante
 COPY . .
 
-# Build do projeto
+# Build otimizado do Vite
 RUN npm run build
 
 
-# Etapa 2: Nginx para servir os arquivos
-FROM nginx:alpine
+# ===============================
+# Etapa 2: Servidor Nginx otimizado
+# ===============================
+FROM nginx:stable-alpine
+WORKDIR /usr/share/nginx/html
 
-# Copiar o build do front
-COPY --from=build /app/dist /usr/share/nginx/html
+# Remover conteúdo padrão
+RUN rm -rf ./*
 
-# Copiar a configuração customizada do Nginx
+# Copiar build do Vite
+COPY --from=build /app/dist .
+
+# Copiar configuração customizada do Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Habilitar compressão gzip (melhora tempo de carregamento)
+RUN apk add --no-cache gzip
+
+# Expor porta
 EXPOSE 80
+
+# Iniciar o Nginx
 CMD ["nginx", "-g", "daemon off;"]
