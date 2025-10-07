@@ -6,6 +6,7 @@ import com.financas.pessoais.financasweb.repository.LancamentoRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,13 @@ public class DashboardController {
 
     @GetMapping
     public Map<String, Object> getDashboard(@RequestParam int ano, @RequestParam int mes) {
+        // 🔹 Define o período exato do mês
+        LocalDate inicio = LocalDate.of(ano, mes, 1);
+        LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        BigDecimal receitas = lancamentoRepository.totalReceitas(ano, mes);
-        BigDecimal despesasVariaveis = lancamentoRepository.totalDespesas(ano, mes);
+        // Totais principais — agora usando o intervalo
+        BigDecimal receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
+        BigDecimal despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
         BigDecimal despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(ano, mes);
 
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
@@ -40,18 +45,18 @@ public class DashboardController {
         dados.put("saldo", saldo);
 
         // Variáveis
-        dados.put("categorias", lancamentoRepository.despesasPorCategoria(ano, mes));
-        dados.put("responsaveis", lancamentoRepository.despesasPorResponsavel(ano, mes));
-        dados.put("bancos", lancamentoRepository.despesasPorBanco(ano, mes));
+        dados.put("categorias", lancamentoRepository.despesasPorCategoriaPeriodo(inicio, fim));
+        dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
+        dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
 
         // Fixas
         dados.put("fixasCategorias", despesaFixaRepository.despesasFixasPorCategoria(ano, mes));
         dados.put("fixasResponsaveis", despesaFixaRepository.despesasFixasPorResponsavel(ano, mes));
 
         // Receitas
-        dados.put("receitasCategorias", lancamentoRepository.receitasPorCategoria(ano, mes));
-        dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavel(ano, mes));
-        dados.put("receitasBancos", lancamentoRepository.receitasPorBanco(ano, mes));
+        dados.put("receitasCategorias", lancamentoRepository.receitasPorCategoriaPeriodo(inicio, fim));
+        dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
+        dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
         // Mensal
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
