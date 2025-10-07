@@ -65,11 +65,15 @@ export default function Dashboard() {
   // 🔹 Quando abrir o modal, carrega listas
   const abrirModalFiltros = async () => {
     setShowFiltros(true);
+
+    // Se já carregou antes, não chama de novo
+    if (categorias.length && responsaveis.length && contas.length) return;
+
     try {
       const [catRes, respRes, contRes] = await Promise.all([
         api.get("/categorias"),
         api.get("/parametros/responsaveis"),
-        api.get("/parametros//contas"),
+        api.get("/parametros/contas"),
       ]);
       setCategorias(catRes.data || []);
       setResponsaveis(respRes.data || []);
