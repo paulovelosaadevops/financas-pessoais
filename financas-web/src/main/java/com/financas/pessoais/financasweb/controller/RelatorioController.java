@@ -38,14 +38,18 @@ public class RelatorioController {
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) Long responsavelId,
             @RequestParam(required = false) Long contaId) {
+
         try {
             LocalDate inicio = LocalDate.of(ano, mes, 1);
             LocalDate fim = LocalDate.of(ano, mes, inicio.lengthOfMonth());
 
-            // 🔹 Agora busca lançamentos filtrados conforme parâmetros recebidos
+            // 🔹 Buscar lançamentos variáveis conforme filtros
             List<Lancamento> lancamentos = lancamentoRepository.buscarLancamentosFiltrados(
                     ano, mes, tipo, categoriaId, responsavelId, contaId
             );
+
+            // 🔹 Buscar despesas fixas ativas no mês
+            List<DespesaFixa> despesasFixas = despesaFixaRepository.findDespesasFixasAtivas(ano, mes);
 
             try (Workbook workbook = new XSSFWorkbook()) {
                 Sheet sheet = workbook.createSheet("Lançamentos");
