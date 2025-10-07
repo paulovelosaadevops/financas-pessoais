@@ -14,9 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.TextStyle;
 import java.util.List;
-import java.util.Locale;
 
 @RestController
 @RequestMapping("/relatorios")
@@ -35,22 +33,36 @@ public class RelatorioController {
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportarLancamentos(@RequestParam int mes, @RequestParam int ano) {
         try {
-            System.setProperty("java.awt.headless", "true");
-
             LocalDate inicio = LocalDate.of(ano, mes, 1);
             LocalDate fim = LocalDate.of(ano, mes, inicio.lengthOfMonth());
 
+            // 🔹 Busca lançamentos variáveis e fixos
             List<Lancamento> lancamentos = lancamentoRepository.findByDataBetween(inicio, fim);
             List<DespesaFixa> despesasFixas = despesaFixaRepository.findAll();
 
             try (Workbook workbook = new XSSFWorkbook()) {
-                Sheet sheet = workbook.createSheet("Relatório Financeiro");
+                Sheet sheet = workbook.createSheet("Lançamentos");
                 int rowIdx = 0;
 
-                // 🎨 Estilos visuais omitidos aqui (iguais à versão anterior)...
+                // ===== Estilos =====
                 Font normalFont = workbook.createFont();
                 normalFont.setFontHeightInPoints((short) 11);
                 normalFont.setFontName("Arial");
+
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setColor(IndexedColors.WHITE.getIndex());
+                headerFont.setFontName("Arial");
+
+                CellStyle headerStyle = workbook.createCellStyle();
+                headerStyle.setFont(headerFont);
+                headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                headerStyle.setAlignment(HorizontalAlignment.CENTER);
+                headerStyle.setBorderBottom(BorderStyle.THIN);
+                headerStyle.setBorderTop(BorderStyle.THIN);
+                headerStyle.setBorderLeft(BorderStyle.THIN);
+                headerStyle.setBorderRight(BorderStyle.THIN);
 
                 CellStyle normalStyle = workbook.createCellStyle();
                 normalStyle.setFont(normalFont);
@@ -59,105 +71,105 @@ public class RelatorioController {
                 normalStyle.setBorderLeft(BorderStyle.THIN);
                 normalStyle.setBorderRight(BorderStyle.THIN);
 
+                CellStyle alternateStyle = workbook.createCellStyle();
+                alternateStyle.cloneStyleFrom(normalStyle);
+                alternateStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+                alternateStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
                 CellStyle moneyStyle = workbook.createCellStyle();
                 moneyStyle.cloneStyleFrom(normalStyle);
-                DataFormat df = workbook.createDataFormat();
-                moneyStyle.setDataFormat(df.getFormat("R$ #,##0.00"));
+                DataFormat format = workbook.createDataFormat();
+                moneyStyle.setDataFormat(format.getFormat("R$ #,##0.00"));
 
-                // Cabeçalho do relatório
-                String mesExtenso = inicio.getMonth()
-                        .getDisplayName(TextStyle.FULL, new Locale("pt", "BR"))
-                        .toUpperCase();
-
-                Row titleRow = sheet.createRow(rowIdx++);
-                titleRow.createCell(0).setCellValue("Relatório Financeiro - Família Bertão");
-                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
-
-                Row subtitleRow = sheet.createRow(rowIdx++);
-                subtitleRow.createCell(0).setCellValue("Período: " + mesExtenso + " / " + ano);
-                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 6));
-                rowIdx++;
-
-                // Cabeçalho da tabela
-                String[] colunas = {"Data", "Tipo", "Categoria", "Descrição", "Valor", "Conta/Cartão", "Responsável"};
+                // ===== Cabeçalho =====
+                String[] colunas = {"Data", "Tipo", "Categoria", "Descrição", "Valor", "Conta", "Responsável"};
                 Row header = sheet.createRow(rowIdx++);
                 for (int i = 0; i < colunas.length; i++) {
-                    header.createCell(i).setCellValue(colunas[i]);
+                    Cell cell = header.createCell(i);
+                    cell.setCellValue(colunas[i]);
+                    cell.setCellStyle(headerStyle);
                 }
 
                 BigDecimal totalReceita = BigDecimal.ZERO;
                 BigDecimal totalDespesa = BigDecimal.ZERO;
 
-                // 🧾 Lançamentos variáveis
+                // ===== Lançamentos Variáveis =====
                 for (Lancamento l : lancamentos) {
                     Row row = sheet.createRow(rowIdx++);
-                    String data = (l.getData() != null) ? l.getData().toString() : "";
-                    String tipo = (l.getTipo() != null) ? l.getTipo() : "";
-                    String categoria = (l.getCategoria() != null) ? l.getCategoria().getNome() : "";
-                    String descricao = (l.getDescricao() != null) ? l.getDescricao() : "";
-                    double valor = (l.getValor() != null) ? l.getValor().doubleValue() : 0.0;
-                    String conta = (l.getContaOuCartao() != null) ? l.getContaOuCartao().getNome() : "";
-                    String responsavel = (l.getResponsavel() != null) ? l.getResponsavel().getNome() : "";
+                    boolean linhaPar = rowIdx % 2 == 0;
+                    CellStyle estilo = linhaPar ? alternateStyle : normalStyle;
 
-                    row.createCell(0).setCellValue(data);
-                    row.createCell(1).setCellValue(tipo);
-                    row.createCell(2).setCellValue(categoria);
-                    row.createCell(3).setCellValue(descricao);
-                    row.createCell(4).setCellValue(valor);
-                    row.createCell(5).setCellValue(conta);
-                    row.createCell(6).setCellValue(responsavel);
+                    row.createCell(0).setCellValue(l.getData() != null ? l.getData().toString() : "");
+                    row.createCell(1).setCellValue(l.getTipo() != null ? l.getTipo() : "");
+                    row.createCell(2).setCellValue(l.getCategoria() != null ? l.getCategoria().getNome() : "");
+                    row.createCell(3).setCellValue(l.getDescricao() != null ? l.getDescricao() : "");
+                    row.createCell(4).setCellValue(l.getValor() != null ? l.getValor().doubleValue() : 0.0);
+                    row.createCell(5).setCellValue(l.getContaOuCartao() != null ? l.getContaOuCartao().getNome() : "");
+                    row.createCell(6).setCellValue(l.getResponsavel() != null ? l.getResponsavel().getNome() : "");
 
-                    row.getCell(4).setCellStyle(moneyStyle);
+                    for (int i = 0; i <= 6; i++) {
+                        if (i == 4) row.getCell(i).setCellStyle(moneyStyle);
+                        else row.getCell(i).setCellStyle(estilo);
+                    }
 
-                    if ("RECEITA".equalsIgnoreCase(tipo))
-                        totalReceita = totalReceita.add(l.getValor());
-                    else
-                        totalDespesa = totalDespesa.add(l.getValor());
-                }
-
-                // 💡 Despesas fixas (como DESPESA)
-                for (DespesaFixa dfItem : despesasFixas) {
-                    if (dfItem.getDataInicio().getMonthValue() <= mes &&
-                            (dfItem.getDataFim() == null || dfItem.getDataFim().getMonthValue() >= mes)) {
-
-                        Row row = sheet.createRow(rowIdx++);
-                        row.createCell(0).setCellValue(inicio.withDayOfMonth(1).toString());
-                        row.createCell(1).setCellValue("DESPESA");
-                        row.createCell(2).setCellValue(dfItem.getCategoria().getNome());
-                        row.createCell(3).setCellValue(dfItem.getDescricao());
-                        row.createCell(4).setCellValue(dfItem.getValor().doubleValue());
-                        row.createCell(5).setCellValue(dfItem.getContaOuCartao().getNome());
-                        row.createCell(6).setCellValue(dfItem.getResponsavel().getNome());
-
-                        row.getCell(4).setCellStyle(moneyStyle);
-
-                        totalDespesa = totalDespesa.add(dfItem.getValor());
+                    if ("RECEITA".equalsIgnoreCase(l.getTipo())) {
+                        totalReceita = totalReceita.add(l.getValor() != null ? l.getValor() : BigDecimal.ZERO);
+                    } else if ("DESPESA".equalsIgnoreCase(l.getTipo())) {
+                        totalDespesa = totalDespesa.add(l.getValor() != null ? l.getValor() : BigDecimal.ZERO);
                     }
                 }
 
-                // Totais
-                rowIdx++;
-                Row totalR = sheet.createRow(rowIdx++);
-                totalR.createCell(3).setCellValue("Total Receitas:");
-                totalR.createCell(4).setCellValue(totalReceita.doubleValue());
-                totalR.getCell(4).setCellStyle(moneyStyle);
+                // ===== Despesas Fixas =====
+                for (DespesaFixa dfItem : despesasFixas) {
+                    if (dfItem.getFimRecorrencia() == null ||
+                            (dfItem.getFimRecorrencia().getYear() > ano ||
+                                    (dfItem.getFimRecorrencia().getYear() == ano &&
+                                            dfItem.getFimRecorrencia().getMonthValue() >= mes))) {
 
-                Row totalD = sheet.createRow(rowIdx++);
-                totalD.createCell(3).setCellValue("Total Despesas:");
-                totalD.createCell(4).setCellValue(totalDespesa.doubleValue());
-                totalD.getCell(4).setCellStyle(moneyStyle);
+                        Row row = sheet.createRow(rowIdx++);
+                        boolean linhaPar = rowIdx % 2 == 0;
+                        CellStyle estilo = linhaPar ? alternateStyle : normalStyle;
 
-                Row saldo = sheet.createRow(rowIdx++);
-                saldo.createCell(3).setCellValue("Saldo:");
-                saldo.createCell(4).setCellValue(totalReceita.subtract(totalDespesa).doubleValue());
-                saldo.getCell(4).setCellStyle(moneyStyle);
+                        row.createCell(0).setCellValue("Mensal");
+                        row.createCell(1).setCellValue("DESPESA FIXA");
+                        row.createCell(2).setCellValue(dfItem.getCategoria() != null ? dfItem.getCategoria().getNome() : "");
+                        row.createCell(3).setCellValue(dfItem.getDescricao() != null ? dfItem.getDescricao() : "");
+                        row.createCell(4).setCellValue(dfItem.getValor() != null ? dfItem.getValor().doubleValue() : 0.0);
+                        row.createCell(5).setCellValue(dfItem.getConta() != null ? dfItem.getConta().getNome() : "");
+                        row.createCell(6).setCellValue(dfItem.getResponsavel() != null ? dfItem.getResponsavel().getNome() : "");
 
-                // Ajuste de largura
-                int[] larguras = {4000, 3000, 5000, 10000, 4000, 5000, 5000};
+                        for (int i = 0; i <= 6; i++) {
+                            if (i == 4) row.getCell(i).setCellStyle(moneyStyle);
+                            else row.getCell(i).setCellStyle(estilo);
+                        }
+
+                        totalDespesa = totalDespesa.add(dfItem.getValor() != null ? dfItem.getValor() : BigDecimal.ZERO);
+                    }
+                }
+
+                // ===== Totais =====
+                Row totalRow = sheet.createRow(rowIdx++);
+                totalRow.createCell(3).setCellValue("Total Receitas:");
+                totalRow.createCell(4).setCellValue(totalReceita.doubleValue());
+                totalRow.getCell(4).setCellStyle(moneyStyle);
+
+                Row totalRow2 = sheet.createRow(rowIdx++);
+                totalRow2.createCell(3).setCellValue("Total Despesas:");
+                totalRow2.createCell(4).setCellValue(totalDespesa.doubleValue());
+                totalRow2.getCell(4).setCellStyle(moneyStyle);
+
+                Row totalRow3 = sheet.createRow(rowIdx++);
+                totalRow3.createCell(3).setCellValue("Saldo:");
+                totalRow3.createCell(4).setCellValue(totalReceita.subtract(totalDespesa).doubleValue());
+                totalRow3.getCell(4).setCellStyle(moneyStyle);
+
+                // ===== Largura padrão =====
+                int[] larguras = {3500, 3000, 4500, 9000, 4000, 4000, 4000};
                 for (int i = 0; i < larguras.length; i++) {
                     sheet.setColumnWidth(i, larguras[i]);
                 }
 
+                // ===== Finaliza =====
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 workbook.write(out);
 
