@@ -11,7 +11,10 @@ import java.util.List;
 
 public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
 
-    // ===== Totais GERAIS (sem filtro) — mantidos por compatibilidade
+    // Novo método para exportação de relatório
+    List<Lancamento> findByDataBetween(LocalDate dataInicio, LocalDate dataFim);
+
+    // ===== Totais GERAIS (sem filtro)
     @Query("SELECT COALESCE(SUM(l.valor),0) FROM Lancamento l WHERE l.tipo = 'RECEITA'")
     BigDecimal totalReceitas();
 
@@ -91,7 +94,7 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
            """)
     List<AgrupamentoDTO> receitasPorBanco(int ano, int mes);
 
-    // ===== Série mensal (toda a base): receitas e variáveis =====
+    // ===== Série mensal =====
     @Query("""
            SELECT YEAR(l.data), MONTH(l.data),
                   SUM(CASE WHEN l.tipo = 'RECEITA' THEN l.valor ELSE 0 END),
@@ -102,11 +105,9 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
            """)
     List<Object[]> receitasVsDespesasMensal();
 
-    // Últimos lançamentos
     @Query("SELECT l FROM Lancamento l ORDER BY l.data DESC")
     List<Lancamento> ultimosLancamentos();
 
-    // usado pelo service p/ evitar duplicados
     @Query("""
            SELECT COUNT(l) > 0 FROM Lancamento l
             WHERE l.descricao = :descricao AND l.data = :data AND l.valor = :valor

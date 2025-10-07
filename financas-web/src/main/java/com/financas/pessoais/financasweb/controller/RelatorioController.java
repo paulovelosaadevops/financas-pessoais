@@ -27,11 +27,10 @@ public class RelatorioController {
 
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportarLancamentos(@RequestParam int mes, @RequestParam int ano) {
-        List<Lancamento> lancamentos = lancamentoRepository
-                .findByDataBetween(
-                        LocalDate.of(ano, mes, 1),
-                        LocalDate.of(ano, mes, LocalDate.of(ano, mes, 1).lengthOfMonth())
-                );
+        List<Lancamento> lancamentos = lancamentoRepository.findByDataBetween(
+                LocalDate.of(ano, mes, 1),
+                LocalDate.of(ano, mes, LocalDate.of(ano, mes, 1).lengthOfMonth())
+        );
 
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Lançamentos");
@@ -41,8 +40,7 @@ public class RelatorioController {
             Row header = sheet.createRow(rowIdx++);
             String[] colunas = {"Data", "Tipo", "Categoria", "Descrição", "Valor", "Conta/Cartão", "Responsável"};
             for (int i = 0; i < colunas.length; i++) {
-                Cell cell = header.createCell(i);
-                cell.setCellValue(colunas[i]);
+                header.createCell(i).setCellValue(colunas[i]);
             }
 
             BigDecimal totalReceita = BigDecimal.ZERO;
@@ -52,14 +50,14 @@ public class RelatorioController {
             for (Lancamento l : lancamentos) {
                 Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(l.getData().toString());
-                row.createCell(1).setCellValue(l.getTipo().name());
-                row.createCell(2).setCellValue(l.getCategoria().getNome());
-                row.createCell(3).setCellValue(l.getDescricao());
+                row.createCell(1).setCellValue(l.getTipo());
+                row.createCell(2).setCellValue(l.getCategoria() != null ? l.getCategoria().getNome() : "");
+                row.createCell(3).setCellValue(l.getDescricao() != null ? l.getDescricao() : "");
                 row.createCell(4).setCellValue(l.getValor().doubleValue());
-                row.createCell(5).setCellValue(l.getContaOuCartao().getNome());
-                row.createCell(6).setCellValue(l.getResponsavel().getNome());
+                row.createCell(5).setCellValue(l.getContaOuCartao() != null ? l.getContaOuCartao().getNome() : "");
+                row.createCell(6).setCellValue(l.getResponsavel() != null ? l.getResponsavel().getNome() : "");
 
-                if (l.getTipo().name().equals("RECEITA"))
+                if ("RECEITA".equalsIgnoreCase(l.getTipo()))
                     totalReceita = totalReceita.add(l.getValor());
                 else
                     totalDespesa = totalDespesa.add(l.getValor());
@@ -86,7 +84,8 @@ public class RelatorioController {
             workbook.write(out);
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=relatorio-lancamentos-" + mes + "-" + ano + ".xlsx")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=relatorio-lancamentos-" + mes + "-" + ano + ".xlsx")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(out.toByteArray());
 
