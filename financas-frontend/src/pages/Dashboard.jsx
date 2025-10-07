@@ -68,8 +68,8 @@ export default function Dashboard() {
     try {
       const [catRes, respRes, contRes] = await Promise.all([
         api.get("/categorias"),
-        api.get("/responsaveis"),
-        api.get("/contas"),
+        api.get("/parametros/responsaveis"),
+        api.get("/parametros//contas"),
       ]);
       setCategorias(catRes.data || []);
       setResponsaveis(respRes.data || []);
