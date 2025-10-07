@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
 
-    // Novo método para exportação de relatório
+    // ===== Novo método para exportação de relatório =====
     List<Lancamento> findByDataBetween(LocalDate dataInicio, LocalDate dataFim);
 
     // ===== Totais GERAIS (sem filtro)
@@ -113,23 +113,24 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
             WHERE l.descricao = :descricao AND l.data = :data AND l.valor = :valor
            """)
     boolean existsByDescricaoAndDataAndValor(String descricao, LocalDate data, BigDecimal valor);
-}
 
-@Query("""
-       SELECT l FROM Lancamento l
-        WHERE (:ano IS NULL OR YEAR(l.data) = :ano)
-          AND (:mes IS NULL OR MONTH(l.data) = :mes)
-          AND (:tipo IS NULL OR UPPER(l.tipo) = UPPER(:tipo))
-          AND (:categoriaId IS NULL OR l.categoria.id = :categoriaId)
-          AND (:responsavelId IS NULL OR l.responsavel.id = :responsavelId)
-          AND (:contaId IS NULL OR l.contaOuCartao.id = :contaId)
-        ORDER BY l.data DESC
-       """)
-List<Lancamento> buscarLancamentosFiltrados(
-        Integer ano,
-        Integer mes,
-        String tipo,
-        Long categoriaId,
-        Long responsavelId,
-        Long contaId
-);
+    // ===== 🔹 Filtro dinâmico para relatórios (novo método correto) =====
+    @Query("""
+           SELECT l FROM Lancamento l
+            WHERE (:ano IS NULL OR YEAR(l.data) = :ano)
+              AND (:mes IS NULL OR MONTH(l.data) = :mes)
+              AND (:tipo IS NULL OR UPPER(l.tipo) = UPPER(:tipo))
+              AND (:categoriaId IS NULL OR l.categoria.id = :categoriaId)
+              AND (:responsavelId IS NULL OR l.responsavel.id = :responsavelId)
+              AND (:contaId IS NULL OR l.contaOuCartao.id = :contaId)
+            ORDER BY l.data DESC
+           """)
+    List<Lancamento> buscarLancamentosFiltrados(
+            Integer ano,
+            Integer mes,
+            String tipo,
+            Long categoriaId,
+            Long responsavelId,
+            Long contaId
+    );
+}
