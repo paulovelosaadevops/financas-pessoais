@@ -38,7 +38,7 @@ public class RelatorioController {
 
             // 🔹 Busca lançamentos variáveis e fixos
             List<Lancamento> lancamentos = lancamentoRepository.findByDataBetween(inicio, fim);
-            List<DespesaFixa> despesasFixas = despesaFixaRepository.findAll();
+            List<DespesaFixa> despesasFixas = despesaFixaRepository.findDespesasFixasAtivas(ano, mes);
 
             try (Workbook workbook = new XSSFWorkbook()) {
                 Sheet sheet = workbook.createSheet("Lançamentos");

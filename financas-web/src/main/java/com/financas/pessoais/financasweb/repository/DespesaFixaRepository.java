@@ -44,3 +44,11 @@ public interface DespesaFixaRepository extends JpaRepository<DespesaFixa, Long> 
            """)
     List<AgrupamentoDTO> despesasFixasPorResponsavel(int ano, int mes);
 }
+
+@Query("""
+       SELECT d FROM DespesaFixa d
+        WHERE (d.fimRecorrencia IS NULL
+               OR YEAR(d.fimRecorrencia) > :ano
+               OR (YEAR(d.fimRecorrencia) = :ano AND MONTH(d.fimRecorrencia) >= :mes))
+       """)
+List<DespesaFixa> findDespesasFixasAtivas(int ano, int mes);
