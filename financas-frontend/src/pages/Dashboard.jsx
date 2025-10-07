@@ -46,6 +46,27 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
+  // ✅ Função para exportar relatório Excel
+  const exportarRelatorio = async () => {
+    try {
+      const response = await api.get(
+        `/relatorios/exportar?mes=${mes}&ano=${ano}`,
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `relatorio-lancamentos-${mes}-${ano}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Erro ao exportar relatório:", error);
+      alert("Falha ao gerar o relatório. Verifique o backend.");
+    }
+  };
+
   const COLORS_RECEITAS = ["#34d399", "#10b981", "#059669", "#047857"];
   const COLORS_DESPESAS = ["#f87171", "#ef4444", "#dc2626", "#b91c1c"];
   const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"]; // amarelos
@@ -65,8 +86,8 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-8">Resumo Financeiro - Família Bertão</h1>
 
-      {/* 🔹 Filtro de Mês e Ano */}
-      <div className="flex space-x-4 mb-6">
+      {/* 🔹 Filtro de Mês e Ano + Botão Exportar */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
         <select
           value={mes}
           onChange={(e) => setMes(Number(e.target.value))}
@@ -83,6 +104,13 @@ export default function Dashboard() {
           onChange={(e) => setAno(Number(e.target.value))}
           className="bg-gray-800 p-2 rounded-lg w-28"
         />
+
+        <button
+          onClick={exportarRelatorio}
+          className="ml-auto bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
+        >
+          📊 Exportar Relatório ({meses[mes - 1]} {ano})
+        </button>
       </div>
 
       {/* Cards resumo */}
