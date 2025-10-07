@@ -28,6 +28,9 @@ public class RelatorioController {
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportarLancamentos(@RequestParam int mes, @RequestParam int ano) {
         try {
+            // 🔹 Força o modo headless para evitar erros do AWT em ambientes sem GUI
+            System.setProperty("java.awt.headless", "true");
+
             LocalDate inicio = LocalDate.of(ano, mes, 1);
             LocalDate fim = LocalDate.of(ano, mes, inicio.lengthOfMonth());
             List<Lancamento> lancamentos = lancamentoRepository.findByDataBetween(inicio, fim);
@@ -92,7 +95,6 @@ public class RelatorioController {
                 for (Lancamento l : lancamentos) {
                     Row row = sheet.createRow(rowIdx++);
                     boolean linhaPar = rowIdx % 2 == 0;
-
                     CellStyle linhaStyle = linhaPar ? alternateStyle : normalStyle;
 
                     String data = (l.getData() != null) ? l.getData().toString() : "";
@@ -103,7 +105,6 @@ public class RelatorioController {
                     String conta = (l.getContaOuCartao() != null) ? l.getContaOuCartao().getNome() : "";
                     String responsavel = (l.getResponsavel() != null) ? l.getResponsavel().getNome() : "";
 
-                    // Preenche as células
                     row.createCell(0).setCellValue(data);
                     row.createCell(1).setCellValue(tipo);
                     row.createCell(2).setCellValue(categoria);
@@ -112,7 +113,6 @@ public class RelatorioController {
                     row.createCell(5).setCellValue(conta);
                     row.createCell(6).setCellValue(responsavel);
 
-                    // Aplica estilos
                     for (int i = 0; i <= 6; i++) {
                         if (i == 4) {
                             row.getCell(i).setCellStyle(moneyStyle);
@@ -150,7 +150,6 @@ public class RelatorioController {
                     sheet.setColumnWidth(i, larguras[i]);
                 }
 
-                // Gera o arquivo
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 workbook.write(out);
 
