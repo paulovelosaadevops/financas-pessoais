@@ -4,41 +4,43 @@
 FROM gradle:8.7-jdk17 AS build
 WORKDIR /app
 
-# Copia apenas os arquivos de configuração primeiro (para cache de dependências)
+# Copia arquivos de build primeiro (para cache)
 COPY build.gradle settings.gradle ./
 COPY gradle gradle
-
-# Baixa dependências antes de copiar o código-fonte (build mais rápido em rebuilds)
 RUN gradle clean --no-daemon
 
-# Copia o restante do código
+# Copia o código do projeto
 COPY . .
 
-# Faz o build, pulando testes
+# Build sem testes
 RUN gradle build -x test --no-daemon
 
 
 # ===============================
-# Etapa 2: Imagem final (runtime)
+# Etapa 2: Runtime com suporte gráfico ao Apache POI
 # ===============================
 FROM openjdk:17-jdk-slim
+
 WORKDIR /app
 
-# 🔹 Corrige o erro do Apache POI (autoSizeColumn precisa de fontes e freetype)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+# 🔹 Corrige o erro do Apache POI (precisa de fontes e suporte X11 para autoSizeColumn)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libfreetype6 \
-    fonts-dejavu-core && \
-    rm -rf /var/lib/apt/lists/*
+    fontconfig \
+    libx11-6 \
+    libxext6 \
+    libxi6 \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 
 # Define timezone
 ENV TZ=America/Sao_Paulo
 
-# Copia o .jar gerado
+# Copia o jar da etapa anterior
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expõe a porta
+# Expor porta padrão
 EXPOSE 8080
 
-# Usa shell em vez de JSON (melhor compatibilidade com Render)
+# Executa
 CMD java -jar app.jar
