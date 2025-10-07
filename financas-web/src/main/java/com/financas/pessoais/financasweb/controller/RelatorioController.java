@@ -31,14 +31,21 @@ public class RelatorioController {
     }
 
     @GetMapping("/exportar")
-    public ResponseEntity<byte[]> exportarLancamentos(@RequestParam int mes, @RequestParam int ano) {
+    public ResponseEntity<byte[]> exportarLancamentos(
+            @RequestParam int mes,
+            @RequestParam int ano,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) Long responsavelId,
+            @RequestParam(required = false) Long contaId) {
         try {
             LocalDate inicio = LocalDate.of(ano, mes, 1);
             LocalDate fim = LocalDate.of(ano, mes, inicio.lengthOfMonth());
 
-            // 🔹 Busca lançamentos variáveis e fixos
-            List<Lancamento> lancamentos = lancamentoRepository.findByDataBetween(inicio, fim);
-            List<DespesaFixa> despesasFixas = despesaFixaRepository.findDespesasFixasAtivas(ano, mes);
+            // 🔹 Agora busca lançamentos filtrados conforme parâmetros recebidos
+            List<Lancamento> lancamentos = lancamentoRepository.buscarLancamentosFiltrados(
+                    ano, mes, tipo, categoriaId, responsavelId, contaId
+            );
 
             try (Workbook workbook = new XSSFWorkbook()) {
                 Sheet sheet = workbook.createSheet("Lançamentos");

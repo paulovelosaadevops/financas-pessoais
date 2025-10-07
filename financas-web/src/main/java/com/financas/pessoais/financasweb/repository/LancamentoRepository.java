@@ -114,3 +114,22 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
            """)
     boolean existsByDescricaoAndDataAndValor(String descricao, LocalDate data, BigDecimal valor);
 }
+
+@Query("""
+       SELECT l FROM Lancamento l
+        WHERE (:ano IS NULL OR YEAR(l.data) = :ano)
+          AND (:mes IS NULL OR MONTH(l.data) = :mes)
+          AND (:tipo IS NULL OR UPPER(l.tipo) = UPPER(:tipo))
+          AND (:categoriaId IS NULL OR l.categoria.id = :categoriaId)
+          AND (:responsavelId IS NULL OR l.responsavel.id = :responsavelId)
+          AND (:contaId IS NULL OR l.contaOuCartao.id = :contaId)
+        ORDER BY l.data DESC
+       """)
+List<Lancamento> buscarLancamentosFiltrados(
+        Integer ano,
+        Integer mes,
+        String tipo,
+        Long categoriaId,
+        Long responsavelId,
+        Long contaId
+);
