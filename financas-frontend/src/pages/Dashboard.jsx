@@ -10,15 +10,13 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
-
-// ✅ importando api no lugar do axios
-import api from "../api"; // ✅
+import api from "../api"; // ✅ usa configuração global de axios
 
 export default function Dashboard() {
   const [resumo, setResumo] = useState({
     totalReceitas: 0,
-    totalDespesas: 0,   // apenas variáveis
-    totalFixas: 0,      // apenas fixas
+    totalDespesas: 0,
+    totalFixas: 0,
     saldo: 0,
     categorias: [],
     responsaveis: [],
@@ -35,6 +33,15 @@ export default function Dashboard() {
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
 
+  // 🔹 Controle do modal e filtros
+  const [showFiltros, setShowFiltros] = useState(false);
+  const [filtros, setFiltros] = useState({
+    tipo: "",
+    categoriaId: "",
+    responsavelId: "",
+    contaId: "",
+  });
+
   useEffect(() => {
     carregarResumo();
   }, [mes, ano]);
@@ -46,13 +53,24 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
-  // ✅ Função para exportar relatório Excel
+  const handleFiltroChange = (e) => {
+    setFiltros({ ...filtros, [e.target.name]: e.target.value });
+  };
+
+  // ✅ Exportar relatório com filtros
   const exportarRelatorio = async () => {
     try {
-      const response = await api.get(
-        `/relatorios/exportar?mes=${mes}&ano=${ano}`,
-        { responseType: "blob" }
-      );
+      const params = new URLSearchParams();
+      params.append("mes", mes);
+      params.append("ano", ano);
+      if (filtros.tipo) params.append("tipo", filtros.tipo);
+      if (filtros.categoriaId) params.append("categoriaId", filtros.categoriaId);
+      if (filtros.responsavelId) params.append("responsavelId", filtros.responsavelId);
+      if (filtros.contaId) params.append("contaId", filtros.contaId);
+
+      const response = await api.get(`/relatorios/exportar?${params.toString()}`, {
+        responseType: "blob",
+      });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -61,6 +79,7 @@ export default function Dashboard() {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      setShowFiltros(false);
     } catch (error) {
       console.error("Erro ao exportar relatório:", error);
       alert("Falha ao gerar o relatório. Verifique o backend.");
@@ -69,7 +88,7 @@ export default function Dashboard() {
 
   const COLORS_RECEITAS = ["#34d399", "#10b981", "#059669", "#047857"];
   const COLORS_DESPESAS = ["#f87171", "#ef4444", "#dc2626", "#b91c1c"];
-  const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"]; // amarelos
+  const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"];
 
   const formatCurrency = (value) =>
     `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
@@ -86,7 +105,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-8">Resumo Financeiro - Família Bertão</h1>
 
-      {/* 🔹 Filtro de Mês e Ano + Botão Exportar */}
+      {/* 🔹 Filtros de mês/ano + botão exportar */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <select
           value={mes}
@@ -106,14 +125,77 @@ export default function Dashboard() {
         />
 
         <button
-          onClick={exportarRelatorio}
+          onClick={() => setShowFiltros(true)}
           className="ml-auto bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
         >
           📊 Exportar Relatório ({meses[mes - 1]} {ano})
         </button>
       </div>
 
-      {/* Cards resumo */}
+      {/* 🔹 Modal de filtros */}
+      {showFiltros && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-96">
+            <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center">
+              Filtros do Relatório
+            </h2>
+
+            <div className="space-y-3">
+              <select
+                name="tipo"
+                value={filtros.tipo}
+                onChange={handleFiltroChange}
+                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+              >
+                <option value="">Todos os tipos</option>
+                <option value="RECEITA">Receitas</option>
+                <option value="DESPESA">Despesas</option>
+              </select>
+
+              <input
+                name="categoriaId"
+                placeholder="ID da Categoria (opcional)"
+                value={filtros.categoriaId}
+                onChange={handleFiltroChange}
+                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+              />
+
+              <input
+                name="responsavelId"
+                placeholder="ID do Responsável (opcional)"
+                value={filtros.responsavelId}
+                onChange={handleFiltroChange}
+                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+              />
+
+              <input
+                name="contaId"
+                placeholder="ID da Conta (opcional)"
+                value={filtros.contaId}
+                onChange={handleFiltroChange}
+                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+              />
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={exportarRelatorio}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded"
+              >
+                Gerar Excel
+              </button>
+              <button
+                onClick={() => setShowFiltros(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-500 text-white py-2 rounded"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔹 Cards resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <div className="bg-gray-800 shadow-lg rounded-xl p-6 flex items-center space-x-4">
           <ArrowUpCircleIcon className="h-10 w-10 text-green-400" />
@@ -155,6 +237,10 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* 🔹 Gráficos e tabelas originais (sem mudanças) */}
+      {/* Abaixo segue exatamente como seu código anterior */}
+      {/* -------------------------------------------------- */}
 
       {/* Gráficos Despesas Variáveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -203,7 +289,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Gráficos Despesas Fixas */}
+      {/* Despesas Fixas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
           <h2 className="text-lg font-semibold mb-4">Despesas Fixas por Categoria</h2>
@@ -250,7 +336,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Gráficos Receitas */}
+      {/* Receitas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
           <h2 className="text-lg font-semibold mb-4">Receitas por Categoria</h2>
