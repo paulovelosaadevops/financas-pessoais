@@ -58,25 +58,63 @@ public class DashboardController {
         dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
-        // Mensal — correção para usar o mesmo método filtrado de fixas
+        // Mensal — compara receitas, variáveis e fixas mês a mês
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
-        dados.put("mensal", mensal.stream().map(row -> {
+
+// Mapeia meses que já vieram do banco (ex: lançamentos)
+        Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
+
+        for (Object[] row : mensal) {
             int anoRow = ((Number) row[0]).intValue();
             int mesRow = ((Number) row[1]).intValue();
+
             LocalDate inicioRow = LocalDate.of(anoRow, mesRow, 1);
             LocalDate fimRow = inicioRow.withDayOfMonth(inicioRow.lengthOfMonth());
+
+            BigDecimal receitasRow = row[2] != null ? new BigDecimal(row[2].toString()) : BigDecimal.ZERO;
+            BigDecimal variaveisRow = row[3] != null ? new BigDecimal(row[3].toString()) : BigDecimal.ZERO;
+            BigDecimal fixasRow = despesaFixaRepository.totalDespesasFixasAtivas(inicioRow, fimRow);
 
             Map<String, Object> item = new HashMap<>();
             item.put("ano", anoRow);
             item.put("mes", mesRow);
-            item.put("receitas", row[2]);
-            item.put("variaveis", row[3]);
-            item.put("fixas", despesaFixaRepository.totalDespesasFixasAtivas(inicioRow, fimRow));
-            return item;
-        }).toList());
+            item.put("receitas", receitasRow);
+            item.put("variaveis", variaveisRow);
+            item.put("fixas", fixasRow);
+
+            mapaMensal.put(anoRow + "-" + mesRow, item);
+        }
+
+// 🔹 Garante que meses sem lançamentos também apareçam
+        LocalDate hoje = LocalDate.now();
+        for (int m = 1; m <= 12; m++) {
+            String chave = ano + "-" + m;
+            if (!mapaMensal.containsKey(chave)) {
+                LocalDate inicioM = LocalDate.of(ano, m, 1);
+                LocalDate fimM = inicioM.withDayOfMonth(inicioM.lengthOfMonth());
+                BigDecimal fixasMes = despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM);
+
+                Map<String, Object> vazio = new HashMap<>();
+                vazio.put("ano", ano);
+                vazio.put("mes", m);
+                vazio.put("receitas", BigDecimal.ZERO);
+                vazio.put("variaveis", BigDecimal.ZERO);
+                vazio.put("fixas", fixasMes);
+                mapaMensal.put(chave, vazio);
+            }
+        }
+
+        // 🔹 Converte o mapa em lista ordenada por mês
+        List<Map<String, Object>> listaMensal = mapaMensal.values().stream()
+                .sorted((a, b) -> ((Integer) a.get("mes")).compareTo((Integer) b.get("mes")))
+                .toList();
+
+        dados.put("mensal", listaMensal);
+
 
         // Últimos lançamentos
-        List<Lancamento> ultimos = lancamentoRepository.ultimosLancamentos();
+        // 🔹 Últimos lançamentos — apenas do mês/ano selecionados
+        List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
         dados.put("ultimosLancamentos", ultimos);
 
         return dados;

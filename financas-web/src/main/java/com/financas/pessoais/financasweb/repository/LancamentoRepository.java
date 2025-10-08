@@ -161,12 +161,24 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     );
 
     @Query("""
-           SELECT YEAR(l.data), MONTH(l.data),
-                  SUM(CASE WHEN l.tipo = 'RECEITA' THEN l.valor ELSE 0 END),
-                  SUM(CASE WHEN l.tipo = 'DESPESA' THEN l.valor ELSE 0 END)
-             FROM Lancamento l
-            GROUP BY YEAR(l.data), MONTH(l.data)
-            ORDER BY YEAR(l.data), MONTH(l.data)
-           """)
+    SELECT 
+        YEAR(l.data) as ano,
+        MONTH(l.data) as mes,
+        SUM(CASE WHEN l.tipo = 'RECEITA' THEN l.valor ELSE 0 END) as total_receitas,
+        SUM(CASE WHEN l.tipo = 'DESPESA' THEN l.valor ELSE 0 END) as total_despesas
+    FROM Lancamento l
+    GROUP BY YEAR(l.data), MONTH(l.data)
+    ORDER BY ano, mes
+""")
     List<Object[]> receitasVsDespesasMensal();
+
+    @Query("""
+    SELECT l
+      FROM Lancamento l
+     WHERE l.data BETWEEN :inicio AND :fim
+     ORDER BY l.data DESC
+""")
+    List<Lancamento> findUltimosLancamentosPorPeriodo(@Param("inicio") LocalDate inicio,
+                                                      @Param("fim") LocalDate fim);
+
 }
