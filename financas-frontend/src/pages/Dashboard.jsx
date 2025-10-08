@@ -148,21 +148,21 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
 
-    {/* 🔹 Cabeçalho premium refinado */}
-    <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-800 via-gray-900 to-gray-950 p-6 shadow-lg border border-gray-800">
+    {/* 🔹 Cabeçalho refinado com assinatura real */}
+    <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         {/* Título principal */}
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-white">
-            Painel <span className="text-green-400">Financeiro</span>
+          <h1 className="text-5xl font-semibold tracking-tight text-white">
+            <span className="text-green-400">Painel</span> Financeiro
           </h1>
-          <p className="text-lg italic font-[Great_Vibes] text-yellow-400 mt-1">
+          <p className="text-2xl font-assinatura text-amber-400 mt-1 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
             Família Bertão
           </p>
         </div>
 
         {/* Período à direita */}
-        <div className="mt-4 sm:mt-0 text-sm text-gray-400 bg-gray-800 px-4 py-2 rounded-lg shadow-inner border border-gray-700">
+        <div className="mt-4 sm:mt-0 text-sm text-gray-400 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
           {meses[mes - 1]} / {ano}
         </div>
       </div>
