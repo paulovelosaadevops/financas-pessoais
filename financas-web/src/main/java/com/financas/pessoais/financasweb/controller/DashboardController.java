@@ -31,10 +31,10 @@ public class DashboardController {
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        // Totais principais — agora usando o intervalo
+        // Totais principais — agora usando o intervalo corretamente
         BigDecimal receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
         BigDecimal despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
-        BigDecimal despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(ano, mes);
+        BigDecimal despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
 
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
 
@@ -49,7 +49,7 @@ public class DashboardController {
         dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
         dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
 
-        // Fixas
+        // Fixas (filtradas corretamente)
         dados.put("fixasCategorias", despesaFixaRepository.despesasFixasPorCategoria(ano, mes));
         dados.put("fixasResponsaveis", despesaFixaRepository.despesasFixasPorResponsavel(ano, mes));
 
@@ -58,17 +58,20 @@ public class DashboardController {
         dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
-        // Mensal
+        // Mensal — correção para usar o mesmo método filtrado de fixas
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
         dados.put("mensal", mensal.stream().map(row -> {
             int anoRow = ((Number) row[0]).intValue();
             int mesRow = ((Number) row[1]).intValue();
+            LocalDate inicioRow = LocalDate.of(anoRow, mesRow, 1);
+            LocalDate fimRow = inicioRow.withDayOfMonth(inicioRow.lengthOfMonth());
+
             Map<String, Object> item = new HashMap<>();
             item.put("ano", anoRow);
             item.put("mes", mesRow);
             item.put("receitas", row[2]);
             item.put("variaveis", row[3]);
-            item.put("fixas", despesaFixaRepository.totalDespesasFixasAtivas(anoRow, mesRow));
+            item.put("fixas", despesaFixaRepository.totalDespesasFixasAtivas(inicioRow, fimRow));
             return item;
         }).toList());
 

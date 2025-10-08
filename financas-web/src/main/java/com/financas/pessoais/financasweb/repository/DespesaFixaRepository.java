@@ -14,13 +14,13 @@ public interface DespesaFixaRepository extends JpaRepository<DespesaFixa, Long> 
     BigDecimal totalDespesasFixas();
 
     @Query("""
-           SELECT COALESCE(SUM(d.valor),0)
-             FROM DespesaFixa d
-            WHERE (d.fimRecorrencia IS NULL
-                   OR YEAR(d.fimRecorrencia) > :ano
-                   OR (YEAR(d.fimRecorrencia) = :ano AND MONTH(d.fimRecorrencia) >= :mes))
-           """)
-    BigDecimal totalDespesasFixasAtivas(int ano, int mes);
+   SELECT COALESCE(SUM(d.valor),0)
+     FROM DespesaFixa d
+    WHERE (d.fimRecorrencia IS NULL OR d.fimRecorrencia >= :inicio)
+      AND (d.inicioRecorrencia IS NULL OR d.inicioRecorrencia <= :fim)
+   """)
+    BigDecimal totalDespesasFixasAtivas(LocalDate inicio, LocalDate fim);
+
 
     @Query("""
            SELECT new com.financas.pessoais.financasweb.dto.AgrupamentoDTO(c.nome, COALESCE(SUM(d.valor),0))
