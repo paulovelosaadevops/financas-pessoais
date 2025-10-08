@@ -148,21 +148,17 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
 
-    {/* 🔹 Cabeçalho refinado com efeito dourado sutil */}
+    {/* 🔹 Cabeçalho refinado com destaque sutil para "Família Bertão" */}
     <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         {/* Título principal */}
         <div>
           <h1
-            className="text-6xl font-assinatura leading-none relative inline-block bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent animate-golden-glow"
-            style={{
-              textShadow: "0 0 6px rgba(255, 204, 0, 0.3)",
-            }}
+            className="text-[4.5rem] font-assinatura text-amber-400 leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
           >
             Família Bertão
           </h1>
-
-          <p className="text-lg text-gray-100 font-medium mt-1 tracking-wide">
+          <p className="text-lg text-gray-100 font-medium mt-2 tracking-wide">
             Painel Financeiro
           </p>
         </div>
@@ -173,6 +169,7 @@ export default function Dashboard() {
         </div>
       </div>
     </header>
+
 
 
       {/* 🔹 Filtros de mês/ano + botão exportar */}
