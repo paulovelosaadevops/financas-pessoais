@@ -217,16 +217,21 @@ export default function Lancamentos() {
             </h2>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-6 gap-6">
-              {/* Campos principais */}
+              {/* Data */}
               <CampoData form={form} setForm={setForm} />
+              {/* Tipo */}
               <CampoTipo form={form} handleChange={handleChange} />
+              {/* Categoria */}
               <CampoSelect label="Categoria" name="categoria" value={form.categoria?.id} onChange={handleChange} options={categorias} />
+              {/* Valor */}
               <CampoValor form={form} handleChange={handleChange} />
+              {/* Conta */}
               <CampoSelect label="Conta/Cartão" name="contaOuCartao" value={form.contaOuCartao?.id} onChange={handleChange} options={contas} />
+              {/* Responsável */}
               <CampoSelect label="Responsável" name="responsavel" value={form.responsavel?.id} onChange={handleChange} options={responsaveis} />
+              {/* Descrição */}
               <CampoDescricao form={form} handleChange={handleChange} />
-
-              {/* Avançado */}
+              {/* Avançadas */}
               <OpcoesAvancadas form={form} setForm={setForm} handleChange={handleChange} />
 
               {/* Botões */}
