@@ -15,8 +15,7 @@ public interface DespesaFixaRepository extends JpaRepository<DespesaFixa, Long> 
     @Query("""
     SELECT COALESCE(SUM(d.valor), 0)
     FROM DespesaFixa d
-    WHERE (d.fimRecorrencia IS NULL OR d.fimRecorrencia >= :inicio)
-      AND (d.inicioRecorrencia IS NULL OR d.inicioRecorrencia <= :fim)
+    WHERE d.fimRecorrencia IS NULL OR d.fimRecorrencia >= :inicio
 """)
     BigDecimal totalDespesasFixasAtivas(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
