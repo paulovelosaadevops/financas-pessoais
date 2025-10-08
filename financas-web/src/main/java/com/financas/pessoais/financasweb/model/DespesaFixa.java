@@ -33,6 +33,10 @@ public class DespesaFixa {
     @JoinColumn(name = "categoria_id")
     private Categoria categoria;
 
+    // 🔹 Início e fim da recorrência
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private LocalDate inicioRecorrencia;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fimRecorrencia;
 }
