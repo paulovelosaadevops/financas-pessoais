@@ -52,6 +52,24 @@ export default function Dashboard() {
   }, [mes, ano]);
 
   const carregarResumo = () => {
+    // 🔹 limpa antes de buscar novo mês
+    setResumo({
+      totalReceitas: 0,
+      totalDespesas: 0,
+      totalFixas: 0,
+      saldo: 0,
+      categorias: [],
+      responsaveis: [],
+      bancos: [],
+      ultimosLancamentos: [],
+      receitasCategorias: [],
+      receitasResponsaveis: [],
+      receitasBancos: [],
+      fixasCategorias: [],
+      fixasResponsaveis: [],
+      mensal: [],
+    });
+
     api
       .get(`/dashboard?ano=${ano}&mes=${mes}`)
       .then((res) => setResumo(res.data))
