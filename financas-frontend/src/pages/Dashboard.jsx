@@ -309,9 +309,11 @@ export default function Dashboard() {
       {/* 🔸 (mantém toda a estrutura original sem cortes ou perdas) */}
 
       {/* 🔹 Despesas Variáveis */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Variáveis por Categoria</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-red-500/10 hover:border-red-500/30 transition-all duration-300">
+          <h2 className="text-lg font-semibold mb-4 text-red-400 drop-shadow-[0_0_4px_rgba(248,113,113,0.5)]">
+            Despesas Variáveis por Categoria
+          </h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -321,19 +323,32 @@ export default function Dashboard() {
                 outerRadius={100}
                 dataKey="total"
                 nameKey="nome"
-                label={renderLabel}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
               >
                 {resumo.categorias?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_DESPESAS[i % COLORS_DESPESAS.length]} />
+                  <Cell
+                    key={i}
+                    fill={["#b91c1c", "#dc2626", "#ef4444", "#f87171"][i % 4]}
+                  />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                }}
+                formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Variáveis por Responsável</h2>
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-red-500/10 hover:border-red-500/30 transition-all duration-300">
+          <h2 className="text-lg font-semibold mb-4 text-red-400 drop-shadow-[0_0_4px_rgba(248,113,113,0.5)]">
+            Despesas Variáveis por Responsável
+          </h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -343,13 +358,21 @@ export default function Dashboard() {
                 outerRadius={100}
                 dataKey="total"
                 nameKey="nome"
-                label={renderLabel}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
               >
                 {resumo.responsaveis?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_DESPESAS[i % COLORS_DESPESAS.length]} />
+                  <Cell key={i} fill={["#b91c1c", "#dc2626", "#ef4444", "#f87171"][i % 4]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                }}
+                formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -357,8 +380,10 @@ export default function Dashboard() {
 
       {/* 🔹 Despesas Fixas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Fixas por Categoria</h2>
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-yellow-400/10 hover:border-yellow-400/30 transition-all duration-300">
+          <h2 className="text-lg font-semibold mb-4 text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.5)]">
+            Despesas Fixas por Categoria
+          </h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -368,19 +393,29 @@ export default function Dashboard() {
                 outerRadius={100}
                 dataKey="total"
                 nameKey="nome"
-                label={renderLabel}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
               >
                 {resumo.fixasCategorias?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_FIXAS[i % COLORS_FIXAS.length]} />
+                  <Cell key={i} fill={["#ca8a04", "#facc15", "#eab308", "#fcd34d"][i % 4]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                }}
+                formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Fixas por Responsável</h2>
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-yellow-400/10 hover:border-yellow-400/30 transition-all duration-300">
+          <h2 className="text-lg font-semibold mb-4 text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.5)]">
+            Despesas Fixas por Responsável
+          </h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -390,13 +425,21 @@ export default function Dashboard() {
                 outerRadius={100}
                 dataKey="total"
                 nameKey="nome"
-                label={renderLabel}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
               >
                 {resumo.fixasResponsaveis?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_FIXAS[i % COLORS_FIXAS.length]} />
+                  <Cell key={i} fill={["#ca8a04", "#facc15", "#eab308", "#fcd34d"][i % 4]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                }}
+                formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -404,8 +447,10 @@ export default function Dashboard() {
 
       {/* 🔹 Receitas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Receitas por Categoria</h2>
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-emerald-400/10 hover:border-emerald-400/30 transition-all duration-300">
+          <h2 className="text-lg font-semibold mb-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]">
+            Receitas por Categoria
+          </h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -415,19 +460,29 @@ export default function Dashboard() {
                 outerRadius={100}
                 dataKey="total"
                 nameKey="nome"
-                label={renderLabel}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
               >
                 {resumo.receitasCategorias?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_RECEITAS[i % COLORS_RECEITAS.length]} />
+                  <Cell key={i} fill={["#10b981", "#34d399", "#059669", "#047857"][i % 4]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                }}
+                formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Receitas por Responsável</h2>
+        <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-emerald-400/10 hover:border-emerald-400/30 transition-all duration-300">
+          <h2 className="text-lg font-semibold mb-4 text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]">
+            Receitas por Responsável
+          </h2>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -437,38 +492,55 @@ export default function Dashboard() {
                 outerRadius={100}
                 dataKey="total"
                 nameKey="nome"
-                label={renderLabel}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                labelLine={false}
               >
                 {resumo.receitasResponsaveis?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_RECEITAS[i % COLORS_RECEITAS.length]} />
+                  <Cell key={i} fill={["#10b981", "#34d399", "#059669", "#047857"][i % 4]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "1px solid #374151",
+                  borderRadius: "8px",
+                }}
+                formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* 🔹 Gráfico Mensal */}
-      <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
-        <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (Mensal)</h2>
+      <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-blue-400/10 hover:border-blue-400/30 transition-all duration-300 mt-8">
+        <h2 className="text-lg font-semibold mb-4 text-blue-400 drop-shadow-[0_0_4px_rgba(59,130,246,0.5)]">
+          Receitas vs Despesas (Mensal)
+        </h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={resumo.mensal || []}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis dataKey="mes" />
-            <YAxis />
-            <Tooltip formatter={(v) => formatCurrency(v)} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis dataKey="mes" stroke="#9ca3af" />
+            <YAxis stroke="#9ca3af" />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#1f2937",
+                border: "1px solid #374151",
+                borderRadius: "8px",
+              }}
+              formatter={(v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+            />
             <Legend />
-            <Bar dataKey="receitas" fill="#34d399" name="Receitas" />
-            <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" />
-            <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
+            <Bar dataKey="receitas" fill="#34d399" name="Receitas" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="fixas" fill="#facc15" name="Fixas" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* 🔹 Últimos Lançamentos */}
-      <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
-        <h2 className="text-lg font-semibold mb-4">Últimos Lançamentos</h2>
+      <div className="bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-700/50 hover:border-gray-500/70 transition-all duration-300 mt-8">
+        <h2 className="text-lg font-semibold mb-4 text-gray-200">Últimos Lançamentos</h2>
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="text-gray-400 text-sm border-b border-gray-700">
@@ -480,16 +552,14 @@ export default function Dashboard() {
           <tbody>
             {resumo.ultimosLancamentos?.length > 0 ? (
               resumo.ultimosLancamentos.map((l, idx) => (
-                <tr key={idx} className="border-b border-gray-700">
+                <tr key={idx} className="border-b border-gray-700 hover:bg-gray-800/60 transition">
                   <td className="p-2">
-                    {dayjs(l.data).isValid()
-                      ? dayjs(l.data).format("DD/MM/YYYY")
-                      : l.data}
+                    {dayjs(l.data).isValid() ? dayjs(l.data).format("DD/MM/YYYY") : l.data}
                   </td>
                   <td className="p-2">{l.descricao}</td>
                   <td
                     className={`p-2 font-semibold ${
-                      l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
+                      l.tipo === "RECEITA" ? "text-emerald-400" : "text-red-400"
                     }`}
                   >
                     {formatCurrency(l.valor)}
@@ -506,6 +576,4 @@ export default function Dashboard() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
+
