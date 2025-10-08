@@ -148,22 +148,25 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
 
-      {/* 🔹 Cabeçalho refinado */}
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-4 mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-1 sm:gap-3">
-          <div className="text-3xl font-semibold tracking-tight">
-            <span className="text-green-400">Painel</span>{" "}
-            <span className="text-gray-200">Financeiro</span>
-          </div>
-          <div className="text-xl italic text-yellow-400 font-[Great_Vibes] leading-none">
+    {/* 🔹 Cabeçalho premium refinado */}
+    <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-800 via-gray-900 to-gray-950 p-6 shadow-lg border border-gray-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        {/* Título principal */}
+        <div>
+          <h1 className="text-4xl font-semibold tracking-tight text-white">
+            Painel <span className="text-green-400">Financeiro</span>
+          </h1>
+          <p className="text-lg italic font-[Great_Vibes] text-yellow-400 mt-1">
             Família Bertão
-          </div>
+          </p>
         </div>
 
-        <div className="text-gray-400 text-sm mt-2 sm:mt-0">
+        {/* Período à direita */}
+        <div className="mt-4 sm:mt-0 text-sm text-gray-400 bg-gray-800 px-4 py-2 rounded-lg shadow-inner border border-gray-700">
           {meses[mes - 1]} / {ano}
         </div>
-      </header>
+      </div>
+    </header>
 
 
       {/* 🔹 Filtros de mês/ano + botão exportar */}
