@@ -12,6 +12,8 @@ RUN gradle dependencies --no-daemon || return 0
 # Agora copia o resto do código
 COPY . .
 
+RUN rm -rf /root/.gradle/caches/
+
 # Faz o build (sem testes)
 RUN gradle clean build -x test --no-daemon
 
