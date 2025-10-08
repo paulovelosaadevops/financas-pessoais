@@ -80,11 +80,9 @@ export default function Dashboard() {
     setFiltros({ ...filtros, [e.target.name]: e.target.value });
   };
 
-  // 🔹 Quando abrir o modal, carrega listas
   const abrirModalFiltros = async () => {
     setShowFiltros(true);
 
-    // Se já carregou antes, não chama de novo
     if (categorias.length && responsaveis.length && contas.length) return;
 
     try {
@@ -101,7 +99,6 @@ export default function Dashboard() {
     }
   };
 
-  // ✅ Exportar relatório com filtros
   const exportarRelatorio = async () => {
     try {
       const params = new URLSearchParams();
@@ -148,55 +145,48 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
 
-      {/* 🔹 Cabeçalho refinado com destaque sutil para "Família Bertão" */}
+      {/* 🔹 Cabeçalho refinado com títulos reposicionados e filtros à direita */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          {/* Título principal */}
-          <div>
-            <h1
-              className="text-[4.5rem] font-assinatura text-amber-400 leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
-            >
-              Família Bertão
-            </h1>
-            <p className="text-lg text-gray-100 font-medium mt-2 tracking-wide">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+
+          {/* 🔸 Título à esquerda */}
+          <div className="text-center sm:text-left">
+            <h1 className="text-5xl font-bold text-white leading-tight">
               Painel Financeiro
+            </h1>
+            <p className="text-3xl font-assinatura text-amber-400 mt-1">
+              Família Bertão
             </p>
           </div>
 
-          {/* Período à direita */}
-          <div className="mt-4 sm:mt-0 text-sm text-gray-400 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
-            {meses[mes - 1]} / {ano}
+          {/* 🔸 Filtros alinhados à direita */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0">
+            <select
+              value={mes}
+              onChange={(e) => setMes(Number(e.target.value))}
+              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg focus:ring-2 focus:ring-amber-500"
+            >
+              {meses.map((m, i) => (
+                <option key={i + 1} value={i + 1}>{m}</option>
+              ))}
+            </select>
+
+            <input
+              type="number"
+              value={ano}
+              onChange={(e) => setAno(Number(e.target.value))}
+              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg w-24 focus:ring-2 focus:ring-amber-500"
+            />
+
+            <button
+              onClick={abrirModalFiltros}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
+            >
+              📊 Exportar Relatório
+            </button>
           </div>
         </div>
       </header>
-
-      {/* 🔹 Filtros de mês/ano + botão exportar */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <select
-          value={mes}
-          onChange={(e) => setMes(Number(e.target.value))}
-          className="bg-gray-800 p-2 rounded-lg"
-        >
-          {meses.map((m, i) => (
-            <option key={i + 1} value={i + 1}>{m}</option>
-          ))}
-        </select>
-
-        <input
-          type="number"
-          value={ano}
-          onChange={(e) => setAno(Number(e.target.value))}
-          className="bg-gray-800 p-2 rounded-lg w-28"
-        />
-
-        <button
-          onClick={abrirModalFiltros}
-          className="ml-auto bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
-        >
-          📊 Exportar Relatório ({meses[mes - 1]} {ano})
-        </button>
-      </div>
-
       {/* 🔹 Modal de filtros */}
       {showFiltros && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -206,7 +196,6 @@ export default function Dashboard() {
             </h2>
 
             <div className="space-y-3">
-              {/* Tipo */}
               <select
                 name="tipo"
                 value={filtros.tipo}
@@ -218,7 +207,6 @@ export default function Dashboard() {
                 <option value="DESPESA">Despesas</option>
               </select>
 
-              {/* Categoria */}
               <select
                 name="categoriaId"
                 value={filtros.categoriaId}
@@ -231,7 +219,6 @@ export default function Dashboard() {
                 ))}
               </select>
 
-              {/* Responsável */}
               <select
                 name="responsavelId"
                 value={filtros.responsavelId}
@@ -244,7 +231,6 @@ export default function Dashboard() {
                 ))}
               </select>
 
-              {/* Conta */}
               <select
                 name="contaId"
                 value={filtros.contaId}
@@ -319,7 +305,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔹 Gráficos Despesas Variáveis */}
+      {/* 🔹 Gráficos, receitas, despesas e lançamentos — preservados */}
+      {/* 🔸 (mantém toda a estrutura original sem cortes ou perdas) */}
+
+      {/* 🔹 Despesas Variáveis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
           <h2 className="text-lg font-semibold mb-4">Despesas Variáveis por Categoria</h2>
@@ -460,7 +449,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔹 Gráfico mensal */}
+      {/* 🔹 Gráfico Mensal */}
       <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
         <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (Mensal)</h2>
         <ResponsiveContainer width="100%" height={300}>
@@ -477,7 +466,7 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* 🔹 Últimos lançamentos */}
+      {/* 🔹 Últimos Lançamentos */}
       <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
         <h2 className="text-lg font-semibold mb-4">Últimos Lançamentos</h2>
         <table className="w-full text-left border-collapse">
