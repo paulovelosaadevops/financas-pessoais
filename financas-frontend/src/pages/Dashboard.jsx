@@ -147,7 +147,24 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
-      <h1 className="text-3xl font-bold mb-8">Resumo Financeiro - Família Bertão</h1>
+
+      {/* 🔹 Cabeçalho refinado */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-gray-800 pb-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-1 sm:gap-3">
+          <div className="text-3xl font-semibold tracking-tight">
+            <span className="text-green-400">Painel</span>{" "}
+            <span className="text-gray-200">Financeiro</span>
+          </div>
+          <div className="text-xl italic text-yellow-400 font-[Great_Vibes] leading-none">
+            Família Bertão
+          </div>
+        </div>
+
+        <div className="text-gray-400 text-sm mt-2 sm:mt-0">
+          {meses[mes - 1]} / {ano}
+        </div>
+      </header>
+
 
       {/* 🔹 Filtros de mês/ano + botão exportar */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
