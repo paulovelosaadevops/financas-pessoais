@@ -1,17 +1,11 @@
-/* ✅ Importação correta e antes de qualquer @tailwind */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Great+Vibes&display=swap');
-
-/* Tailwind base */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Fontes padrão */
 body {
   font-family: 'Poppins', sans-serif;
 }
 
-/* Fonte exclusiva da assinatura */
 .font-assinatura {
   font-family: 'Great Vibes', cursive;
 }
