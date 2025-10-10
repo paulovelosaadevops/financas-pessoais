@@ -322,30 +322,54 @@ function Section({ titulo, children }) {
   );
 }
 
+/* ✅ PieBox com labels no desktop e legenda no mobile */
 function PieBox({ data, colors, formatCurrency }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const outerRadius = isMobile ? 70 : 100;
+  const totalGeral = data?.reduce((sum, item) => sum + item.total, 0) || 0;
 
   return (
-    <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
-      <PieChart>
-        <Pie
-          data={data || []}
-          cx="50%"
-          cy="50%"
-          outerRadius={outerRadius}
-          dataKey="total"
-          nameKey="nome"
-          label={!isMobile ? ({ name, percent, value }) =>
-            `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
-          : false}
-        >
-          {data?.map((_, i) => (
-            <Cell key={i} fill={colors[i % colors.length]} />
-          ))}
-        </Pie>
-        <Tooltip formatter={(v) => formatCurrency(v)} />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col items-center">
+      <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
+        <PieChart>
+          <Pie
+            data={data || []}
+            cx="50%"
+            cy="50%"
+            outerRadius={outerRadius}
+            dataKey="total"
+            nameKey="nome"
+            label={!isMobile ? ({ name, percent, value }) =>
+              `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
+            : false}
+          >
+            {data?.map((_, i) => (
+              <Cell key={i} fill={colors[i % colors.length]} />
+            ))}
+          </Pie>
+          <Tooltip formatter={(v) => formatCurrency(v)} />
+        </PieChart>
+      </ResponsiveContainer>
+
+      {/* 🔹 Legenda fixa no mobile */}
+      {isMobile && data?.length > 0 && (
+        <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
+          {data.map((item, i) => {
+            const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
+            return (
+              <li key={i} className="flex items-center gap-2">
+                <span
+                  className="h-3 w-3 rounded-full flex-shrink-0"
+                  style={{ background: colors[i % colors.length] }}
+                />
+                <span className="truncate">
+                  {item.nome} — {formatCurrency(item.total)} ({percent}%)
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
