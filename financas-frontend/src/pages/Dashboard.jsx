@@ -322,14 +322,16 @@ function Section({ titulo, children }) {
   );
 }
 
-/* ✅ PieBox com labels no desktop, legenda no mobile e ordenação decrescente */
+/* ✅ PieBox com labels no desktop, legenda no mobile e ordenação real */
 function PieBox({ data, colors, formatCurrency }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const outerRadius = isMobile ? 70 : 100;
-  const totalGeral = data?.reduce((sum, item) => sum + item.total, 0) || 0;
 
-  // 🔹 Ordena do maior para o menor total
-  const sortedData = [...(data || [])].sort((a, b) => b.total - a.total);
+  const sortedData = Array.isArray(data)
+    ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
+    : [];
+
+  const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
 
   return (
     <div className="flex flex-col items-center">
@@ -346,24 +348,29 @@ function PieBox({ data, colors, formatCurrency }) {
               `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
             : false}
           >
-            {sortedData.map((_, i) => (
-              <Cell key={i} fill={colors[i % colors.length]} />
+            {sortedData.map((entry, i) => (
+              <Cell
+                key={`${entry.nome}-${i}`}
+                fill={colors[i % colors.length]}
+              />
             ))}
           </Pie>
           <Tooltip formatter={(v) => formatCurrency(v)} />
         </PieChart>
       </ResponsiveContainer>
 
-      {/* 🔹 Legenda fixa no mobile */}
+      {/* 🔹 Legenda fixa e ordenada no mobile */}
       {isMobile && sortedData.length > 0 && (
         <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
           {sortedData.map((item, i) => {
-            const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
+            const percent = totalGeral
+              ? ((item.total / totalGeral) * 100).toFixed(1)
+              : 0;
             return (
               <li key={i} className="flex items-center gap-2">
                 <span
                   className="h-3 w-3 rounded-full flex-shrink-0"
-                  style={{ background: colors[i % colors.length] }}
+                  style={{ backgroundColor: colors[i % colors.length] }}
                 />
                 <span className="truncate">
                   {item.nome} — {formatCurrency(item.total)} ({percent}%)
