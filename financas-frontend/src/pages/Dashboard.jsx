@@ -33,7 +33,6 @@ export default function Dashboard() {
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
 
-  // 🔹 Controle do modal e filtros
   const [showFiltros, setShowFiltros] = useState(false);
   const [filtros, setFiltros] = useState({
     tipo: "",
@@ -42,7 +41,6 @@ export default function Dashboard() {
     contaId: "",
   });
 
-  // 🔹 Listas carregadas apenas quando o modal é aberto
   const [categorias, setCategorias] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [contas, setContas] = useState([]);
@@ -52,7 +50,6 @@ export default function Dashboard() {
   }, [mes, ano]);
 
   const carregarResumo = () => {
-    // 🔹 limpa antes de buscar novo mês
     setResumo({
       totalReceitas: 0,
       totalDespesas: 0,
@@ -185,7 +182,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* 🔹 Cards resumo com brilho */}
+      {/* 🔹 Cards resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <Card cor="green" titulo="Receitas" valor={resumo.totalReceitas} Icon={ArrowUpCircleIcon} />
         <Card cor="red" titulo="Despesas Variáveis" valor={resumo.totalDespesas} Icon={ArrowDownCircleIcon} />
@@ -193,32 +190,34 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* 🔹 Gráficos com gradientes e brilho */}
-      <Section titulo="Despesas Variáveis por Categoria">
-        <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-      </Section>
+      {/* 🔹 Agrupamento dos gráficos lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Section titulo="Despesas Variáveis por Categoria">
+          <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        </Section>
 
-      <Section titulo="Despesas Variáveis por Responsável">
-        <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-      </Section>
+        <Section titulo="Despesas Variáveis por Responsável">
+          <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        </Section>
 
-      <Section titulo="Despesas Fixas por Categoria">
-        <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-      </Section>
+        <Section titulo="Despesas Fixas por Categoria">
+          <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        </Section>
 
-      <Section titulo="Despesas Fixas por Responsável">
-        <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-      </Section>
+        <Section titulo="Despesas Fixas por Responsável">
+          <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        </Section>
 
-      <Section titulo="Receitas por Categoria">
-        <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-      </Section>
+        <Section titulo="Receitas por Categoria">
+          <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        </Section>
 
-      <Section titulo="Receitas por Responsável">
-        <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-      </Section>
+        <Section titulo="Receitas por Responsável">
+          <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        </Section>
+      </div>
 
-      {/* 🔹 Gráfico Mensal com brilho */}
+      {/* 🔹 Gráfico Mensal */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/20 shadow-lg hover:shadow-blue-500/20 rounded-2xl p-6 mt-10 transition-all duration-300">
         <h2 className="text-lg font-semibold mb-4 text-gray-100">Receitas vs Despesas (Mensal)</h2>
         <ResponsiveContainer width="100%" height={300}>
@@ -235,7 +234,7 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* 🔹 Últimos lançamentos com brilho */}
+      {/* 🔹 Últimos lançamentos */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 mt-10 transition-all duration-300">
         <h2 className="text-lg font-semibold mb-4 text-gray-100">Últimos Lançamentos</h2>
         <table className="w-full text-left border-collapse">
@@ -279,7 +278,7 @@ export default function Dashboard() {
   );
 }
 
-/* 🔹 Subcomponentes preservando o brilho */
+/* 🔹 Subcomponentes */
 function Card({ cor, titulo, valor, Icon }) {
   const corBorda = {
     green: "border-green-400/30 hover:shadow-green-500/20",
@@ -310,7 +309,7 @@ function Card({ cor, titulo, valor, Icon }) {
 
 function Section({ titulo, children }) {
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 mt-8 transition-all duration-300">
+    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 mt-0 transition-all duration-300">
       <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
       {children}
     </div>
