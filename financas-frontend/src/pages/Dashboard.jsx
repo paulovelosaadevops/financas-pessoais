@@ -343,5 +343,53 @@ function Select({ label, value, onChange, options }) {
         ))}
       </select>
     </div>
+
+{/* 🔹 Últimos Lançamentos */}
+<div className="mt-10 bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6">
+  <h2 className="text-lg font-semibold mb-4 text-gray-100">Últimos Lançamentos</h2>
+
+  {resumo.ultimosLancamentos && resumo.ultimosLancamentos.length > 0 ? (
+    <div className="overflow-x-auto">
+      <table className="min-w-full border-collapse">
+        <thead>
+          <tr className="bg-gray-800 text-gray-300 text-sm uppercase tracking-wide">
+            <th className="py-2 px-3 text-left border-b border-gray-700">Data</th>
+            <th className="py-2 px-3 text-left border-b border-gray-700">Tipo</th>
+            <th className="py-2 px-3 text-left border-b border-gray-700">Categoria</th>
+            <th className="py-2 px-3 text-left border-b border-gray-700">Descrição</th>
+            <th className="py-2 px-3 text-right border-b border-gray-700">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {resumo.ultimosLancamentos.slice(0, 8).map((l, idx) => (
+            <tr
+              key={idx}
+              className={`text-sm ${
+                idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800/70"
+              } hover:bg-gray-700/40 transition`}
+            >
+              <td className="py-2 px-3 text-gray-300">{dayjs(l.data).format("DD/MM/YYYY")}</td>
+              <td
+                className={`py-2 px-3 font-semibold ${
+                  l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {l.tipo}
+              </td>
+              <td className="py-2 px-3 text-gray-300 truncate">{l.categoria?.nome || "-"}</td>
+              <td className="py-2 px-3 text-gray-300 truncate">{l.descricao || "-"}</td>
+              <td className="py-2 px-3 text-right text-gray-100">
+                {formatCurrency(l.valor)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p className="text-gray-400 text-sm italic">Nenhum lançamento encontrado neste período.</p>
+  )}
+</div>
+
   );
 }
