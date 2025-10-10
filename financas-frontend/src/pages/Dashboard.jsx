@@ -181,7 +181,7 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* 🔹 Gráficos responsivos */}
+      {/* 🔹 Gráficos */}
       <div className="md:grid md:grid-cols-2 gap-6 flex overflow-x-auto space-x-4 md:space-x-0 snap-x snap-mandatory md:overflow-visible pb-4">
         <Section titulo="Despesas Variáveis por Categoria">
           <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
@@ -209,7 +209,7 @@ export default function Dashboard() {
       </div>
 
       {/* 🔹 Gráfico Mensal */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/20 shadow-lg hover:shadow-blue-500/20 rounded-2xl p-4 sm:p-6 mt-10 transition-all duration-300">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/20 shadow-lg rounded-2xl p-4 sm:p-6 mt-10">
         <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center sm:text-left">
           Receitas vs Despesas (Mensal)
         </h2>
@@ -229,13 +229,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔹 Últimos lançamentos */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-4 sm:p-6 mt-10 transition-all duration-300">
+      {/* 🔹 Últimos Lançamentos */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-4 sm:p-6 mt-10">
         <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center sm:text-left">
           Últimos Lançamentos
         </h2>
 
-        {/* 🧾 Layout tabela → cards no mobile */}
+        {/* Desktop */}
         <div className="hidden sm:block">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -263,7 +263,7 @@ export default function Dashboard() {
           </table>
         </div>
 
-        {/* 🪶 Mobile cards */}
+        {/* Mobile */}
         <div className="sm:hidden space-y-3">
           {resumo.ultimosLancamentos?.length > 0 ? (
             resumo.ultimosLancamentos.map((l, idx) => (
@@ -285,6 +285,31 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* 🔹 Modal Exportar */}
+      {showFiltros && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-[90%] max-w-md">
+            <h2 className="text-xl font-semibold text-gray-100 mb-4 text-center">
+              Exportar Relatório
+            </h2>
+            <div className="space-y-3">
+              <Select label="Tipo" value={filtros.tipo} onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })} options={[
+                { label: "Todos", value: "" },
+                { label: "Receita", value: "RECEITA" },
+                { label: "Despesa", value: "DESPESA" },
+              ]} />
+              <Select label="Categoria" value={filtros.categoriaId} onChange={(e) => setFiltros({ ...filtros, categoriaId: e.target.value })} options={[{ label: "Todas", value: "" }, ...categorias.map((c) => ({ label: c.nome, value: c.id }))]} />
+              <Select label="Responsável" value={filtros.responsavelId} onChange={(e) => setFiltros({ ...filtros, responsavelId: e.target.value })} options={[{ label: "Todos", value: "" }, ...responsaveis.map((r) => ({ label: r.nome, value: r.id }))]} />
+              <Select label="Conta/Cartão" value={filtros.contaId} onChange={(e) => setFiltros({ ...filtros, contaId: e.target.value })} options={[{ label: "Todas", value: "" }, ...contas.map((c) => ({ label: c.nome, value: c.id }))]} />
+            </div>
+            <div className="flex justify-between mt-6">
+              <button onClick={() => setShowFiltros(false)} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition">Cancelar</button>
+              <button onClick={exportarRelatorio} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Gerar Excel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -320,154 +345,79 @@ function Card({ cor, titulo, valor, Icon }) {
 
 function Section({ titulo, children }) {
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
+    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 transition-all duration-300">
       <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
       {children}
     </div>
   );
 }
 
-/* ✅ PieBox com labels no desktop, legenda ordenada no mobile */
 function PieBox({ data, colors, formatCurrency }) {
+  if (!data || data.length === 0)
+    return <div className="text-center text-gray-400 py-10">Nenhum dado disponível.</div>;
+
+  const sortedData = [...data].sort((a, b) => b.total - a.total);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  const outerRadius = isMobile ? 70 : 100;
-  const sortedData = Array.isArray(data)
-    ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
-    : [];
-  const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
+  const outerRadius = isMobile ?
+    const outerRadius = isMobile ? 70 : 100;
 
-  return (
-    <div className="flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
-        <PieChart>
-          <Pie
-            data={sortedData}
-            cx="50%"
-            cy="50%"
-            outerRadius={outerRadius}
-            dataKey="total"
-            nameKey="nome"
-            label={!isMobile ? ({ name, percent, value }) =>
-              `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
-            : false}
-          >
-            {sortedData.map((entry, i) => (
-              <Cell key={`${entry.nome}-${i}`} fill={colors[i % colors.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(v) => formatCurrency(v)} />
-        </PieChart>
-      </ResponsiveContainer>
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <ResponsiveContainer width={isMobile ? "100%" : "70%"} height={isMobile ? 220 : 260}>
+          <PieChart>
+            <Pie
+              data={sortedData}
+              cx="50%"
+              cy="50%"
+              outerRadius={outerRadius}
+              dataKey="total"
+              nameKey="nome"
+            >
+              {sortedData.map((_, i) => (
+                <Cell key={i} fill={colors[i % colors.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(v) => formatCurrency(v)} />
+          </PieChart>
+        </ResponsiveContainer>
 
-      {/* 🔹 Legenda fixa e ordenada no mobile */}
-      {isMobile && sortedData.length > 0 && (
-        <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
-          {sortedData.map((item, i) => {
-            const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
-            return (
-              <li key={i} className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
-                <span className="truncate">{item.nome} — {formatCurrency(item.total)} ({percent}%)</span>
-              </li>
-            );
-          })}
+        {/* 🔹 Legenda ordenada */}
+        <ul className="mt-4 sm:mt-0 sm:w-1/3 text-sm text-gray-300 space-y-1 overflow-y-auto max-h-52 pr-2">
+          {sortedData.map((item, i) => (
+            <li key={i} className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span
+                  className="inline-block w-3 h-3 rounded-full"
+                  style={{ backgroundColor: colors[i % colors.length] }}
+                ></span>
+                {item.nome}
+              </span>
+              <span className="text-gray-400">
+                {formatCurrency(item.total)}
+              </span>
+            </li>
+          ))}
         </ul>
-      )}
-    </div>
-  );
-}
-
-{/* 🔹 Modal de Filtros para Exportar Relatório */}
-{showFiltros && (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-[90%] max-w-md animate-fadeIn">
-      <h2 className="text-xl font-semibold text-gray-100 mb-4 text-center">
-        Exportar Relatório
-      </h2>
-
-      <div className="space-y-3">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Tipo</label>
-          <select
-            value={filtros.tipo}
-            onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
-            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
-          >
-            <option value="">Todos</option>
-            <option value="RECEITA">Receita</option>
-            <option value="DESPESA">Despesa</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Categoria</label>
-          <select
-            value={filtros.categoriaId}
-            onChange={(e) =>
-              setFiltros({ ...filtros, categoriaId: e.target.value })
-            }
-            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
-          >
-            <option value="">Todas</option>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Responsável</label>
-          <select
-            value={filtros.responsavelId}
-            onChange={(e) =>
-              setFiltros({ ...filtros, responsavelId: e.target.value })
-            }
-            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
-          >
-            <option value="">Todos</option>
-            {responsaveis.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Conta/Cartão</label>
-          <select
-            value={filtros.contaId}
-            onChange={(e) =>
-              setFiltros({ ...filtros, contaId: e.target.value })
-            }
-            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
-          >
-            <option value="">Todas</option>
-            {contas.map((conta) => (
-              <option key={conta.id} value={conta.id}>
-                {conta.nome}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
+    );
+  }
 
-      <div className="flex justify-between mt-6">
-        <button
-          onClick={() => setShowFiltros(false)}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
+  /* 🔹 Componente Select usado no modal de filtros */
+  function Select({ label, value, onChange, options }) {
+    return (
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">{label}</label>
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
         >
-          Cancelar
-        </button>
-        <button
-          onClick={exportarRelatorio}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-        >
-          Gerar Excel
-        </button>
+          {options.map((opt, idx) => (
+            <option key={idx} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
-    </div>
-  </div>
-)}
+    );
+  }
