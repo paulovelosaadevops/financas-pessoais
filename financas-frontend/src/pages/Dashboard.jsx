@@ -376,3 +376,98 @@ function PieBox({ data, colors, formatCurrency }) {
     </div>
   );
 }
+
+{/* 🔹 Modal de Filtros para Exportar Relatório */}
+{showFiltros && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-[90%] max-w-md animate-fadeIn">
+      <h2 className="text-xl font-semibold text-gray-100 mb-4 text-center">
+        Exportar Relatório
+      </h2>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Tipo</label>
+          <select
+            value={filtros.tipo}
+            onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
+            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+          >
+            <option value="">Todos</option>
+            <option value="RECEITA">Receita</option>
+            <option value="DESPESA">Despesa</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Categoria</label>
+          <select
+            value={filtros.categoriaId}
+            onChange={(e) =>
+              setFiltros({ ...filtros, categoriaId: e.target.value })
+            }
+            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+          >
+            <option value="">Todas</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Responsável</label>
+          <select
+            value={filtros.responsavelId}
+            onChange={(e) =>
+              setFiltros({ ...filtros, responsavelId: e.target.value })
+            }
+            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+          >
+            <option value="">Todos</option>
+            {responsaveis.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Conta/Cartão</label>
+          <select
+            value={filtros.contaId}
+            onChange={(e) =>
+              setFiltros({ ...filtros, contaId: e.target.value })
+            }
+            className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+          >
+            <option value="">Todas</option>
+            {contas.map((conta) => (
+              <option key={conta.id} value={conta.id}>
+                {conta.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex justify-between mt-6">
+        <button
+          onClick={() => setShowFiltros(false)}
+          className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={exportarRelatorio}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+        >
+          Gerar Excel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
