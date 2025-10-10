@@ -125,30 +125,27 @@ export default function Dashboard() {
   const formatCurrency = (value) =>
     `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
-  const renderLabel = ({ name, percent, value }) =>
-    `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`;
-
   const meses = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
+    <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8">
 
       {/* 🔹 Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
           <div className="text-center sm:text-left">
-            <h1 className="text-5xl font-bold text-white leading-tight">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight">
               Painel Financeiro
             </h1>
-            <p className="text-3xl font-assinatura text-amber-400 mt-1">
+            <p className="text-2xl sm:text-3xl font-assinatura text-amber-400 mt-1">
               Família Bertão
             </p>
           </div>
 
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0 justify-center">
             <select
               value={mes}
               onChange={(e) => setMes(Number(e.target.value))}
@@ -170,7 +167,7 @@ export default function Dashboard() {
               onClick={abrirModalFiltros}
               className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
             >
-              📊 Exportar Relatório
+              📊 Exportar
             </button>
           </div>
         </div>
@@ -186,99 +183,107 @@ export default function Dashboard() {
 
       {/* 🔹 Gráficos responsivos */}
       <div className="md:grid md:grid-cols-2 gap-6 flex overflow-x-auto space-x-4 md:space-x-0 snap-x snap-mandatory md:overflow-visible pb-4">
-        <div className="snap-start min-w-[90%] md:min-w-0">
-          <Section titulo="Despesas Variáveis por Categoria">
-            <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
-          </Section>
-        </div>
+        <Section titulo="Despesas Variáveis por Categoria">
+          <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
+        </Section>
 
-        <div className="snap-start min-w-[90%] md:min-w-0">
-          <Section titulo="Despesas Variáveis por Responsável">
-            <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
-          </Section>
-        </div>
+        <Section titulo="Despesas Variáveis por Responsável">
+          <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
+        </Section>
 
-        <div className="snap-start min-w-[90%] md:min-w-0">
-          <Section titulo="Despesas Fixas por Categoria">
-            <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
-          </Section>
-        </div>
+        <Section titulo="Despesas Fixas por Categoria">
+          <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
+        </Section>
 
-        <div className="snap-start min-w-[90%] md:min-w-0">
-          <Section titulo="Despesas Fixas por Responsável">
-            <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
-          </Section>
-        </div>
+        <Section titulo="Despesas Fixas por Responsável">
+          <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
+        </Section>
 
-        <div className="snap-start min-w-[90%] md:min-w-0">
-          <Section titulo="Receitas por Categoria">
-            <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-          </Section>
-        </div>
+        <Section titulo="Receitas por Categoria">
+          <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+        </Section>
 
-        <div className="snap-start min-w-[90%] md:min-w-0">
-          <Section titulo="Receitas por Responsável">
-            <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-          </Section>
-        </div>
+        <Section titulo="Receitas por Responsável">
+          <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+        </Section>
       </div>
 
       {/* 🔹 Gráfico Mensal */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/20 shadow-lg hover:shadow-blue-500/20 rounded-2xl p-6 mt-10 transition-all duration-300">
-        <h2 className="text-lg font-semibold mb-4 text-gray-100">Receitas vs Despesas (Mensal)</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={resumo.mensal || []}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis dataKey="mes" />
-            <YAxis />
-            <Tooltip formatter={(v) => formatCurrency(v)} />
-            <Legend />
-            <Bar dataKey="receitas" fill="#34d399" name="Receitas" />
-            <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" />
-            <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/20 shadow-lg hover:shadow-blue-500/20 rounded-2xl p-4 sm:p-6 mt-10 transition-all duration-300">
+        <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center sm:text-left">
+          Receitas vs Despesas (Mensal)
+        </h2>
+        <div className="w-full h-[250px] sm:h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={resumo.mensal || []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis dataKey="mes" tick={{ fill: "#ccc", fontSize: 12 }} />
+              <YAxis tick={{ fill: "#ccc", fontSize: 12 }} />
+              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Legend />
+              <Bar dataKey="receitas" fill="#34d399" name="Receitas" />
+              <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" />
+              <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* 🔹 Últimos lançamentos */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 mt-10 transition-all duration-300">
-        <h2 className="text-lg font-semibold mb-4 text-gray-100">Últimos Lançamentos</h2>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="text-gray-400 text-sm border-b border-gray-700">
-              <th className="p-2">Data</th>
-              <th className="p-2">Descrição</th>
-              <th className="p-2">Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {resumo.ultimosLancamentos?.length > 0 ? (
-              resumo.ultimosLancamentos.map((l, idx) => (
-                <tr key={idx} className="border-b border-gray-700 hover:bg-gray-800/40 transition-colors">
-                  <td className="p-2">
-                    {dayjs(l.data).isValid()
-                      ? dayjs(l.data).format("DD/MM/YYYY")
-                      : l.data}
-                  </td>
-                  <td className="p-2">{l.descricao}</td>
-                  <td
-                    className={`p-2 font-semibold ${
-                      l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {formatCurrency(l.valor)}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="3" className="p-4 text-center text-gray-400">
-                  Nenhum lançamento encontrado.
-                </td>
+      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-4 sm:p-6 mt-10 transition-all duration-300">
+        <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center sm:text-left">
+          Últimos Lançamentos
+        </h2>
+
+        {/* 🧾 Layout tabela → cards no mobile */}
+        <div className="hidden sm:block">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="text-gray-400 text-sm border-b border-gray-700">
+                <th className="p-2">Data</th>
+                <th className="p-2">Descrição</th>
+                <th className="p-2">Valor</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {resumo.ultimosLancamentos?.length > 0 ? (
+                resumo.ultimosLancamentos.map((l, idx) => (
+                  <tr key={idx} className="border-b border-gray-700 hover:bg-gray-800/40 transition-colors">
+                    <td className="p-2">{dayjs(l.data).format("DD/MM/YYYY")}</td>
+                    <td className="p-2">{l.descricao}</td>
+                    <td className={`p-2 font-semibold ${l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"}`}>
+                      {formatCurrency(l.valor)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr><td colSpan="3" className="p-4 text-center text-gray-400">Nenhum lançamento encontrado.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 🪶 Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {resumo.ultimosLancamentos?.length > 0 ? (
+            resumo.ultimosLancamentos.map((l, idx) => (
+              <div key={idx} className="bg-gray-800/60 rounded-xl p-3 border border-gray-700 flex flex-col">
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>{dayjs(l.data).format("DD/MM/YYYY")}</span>
+                  <span className={l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"}>
+                    {l.tipo === "RECEITA" ? "Receita" : "Despesa"}
+                  </span>
+                </div>
+                <p className="text-gray-100 text-base font-medium mt-1">{l.descricao}</p>
+                <p className={`text-lg font-semibold ${l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"} mt-1`}>
+                  {formatCurrency(l.valor)}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-400">Nenhum lançamento encontrado.</p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -302,7 +307,7 @@ function Card({ cor, titulo, valor, Icon }) {
 
   return (
     <div className={`bg-gradient-to-br from-gray-900 to-gray-950 border ${corBorda} shadow-lg rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300`}>
-      <Icon className={`h-10 w-10 ${corTexto} drop-shadow-[0_0_4px_rgba(255,255,255,0.2)]`} />
+      <Icon className={`h-10 w-10 ${corTexto}`} />
       <div>
         <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
         <p className={`text-2xl font-semibold ${corTexto}`}>
@@ -315,22 +320,20 @@ function Card({ cor, titulo, valor, Icon }) {
 
 function Section({ titulo, children }) {
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 mt-0 transition-all duration-300">
+    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
       <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
       {children}
     </div>
   );
 }
 
-/* ✅ PieBox com labels no desktop, legenda no mobile e ordenação real */
+/* ✅ PieBox com labels no desktop, legenda ordenada no mobile */
 function PieBox({ data, colors, formatCurrency }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const outerRadius = isMobile ? 70 : 100;
-
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
     : [];
-
   const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
 
   return (
@@ -349,10 +352,7 @@ function PieBox({ data, colors, formatCurrency }) {
             : false}
           >
             {sortedData.map((entry, i) => (
-              <Cell
-                key={`${entry.nome}-${i}`}
-                fill={colors[i % colors.length]}
-              />
+              <Cell key={`${entry.nome}-${i}`} fill={colors[i % colors.length]} />
             ))}
           </Pie>
           <Tooltip formatter={(v) => formatCurrency(v)} />
@@ -363,18 +363,11 @@ function PieBox({ data, colors, formatCurrency }) {
       {isMobile && sortedData.length > 0 && (
         <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
           {sortedData.map((item, i) => {
-            const percent = totalGeral
-              ? ((item.total / totalGeral) * 100).toFixed(1)
-              : 0;
+            const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
             return (
               <li key={i} className="flex items-center gap-2">
-                <span
-                  className="h-3 w-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: colors[i % colors.length] }}
-                />
-                <span className="truncate">
-                  {item.nome} — {formatCurrency(item.total)} ({percent}%)
-                </span>
+                <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
+                <span className="truncate">{item.nome} — {formatCurrency(item.total)} ({percent}%)</span>
               </li>
             );
           })}
