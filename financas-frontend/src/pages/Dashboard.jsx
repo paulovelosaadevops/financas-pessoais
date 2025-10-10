@@ -32,8 +32,6 @@ export default function Dashboard() {
 
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
-
-  // 🔹 Controle do modal e filtros
   const [showFiltros, setShowFiltros] = useState(false);
   const [filtros, setFiltros] = useState({
     tipo: "",
@@ -42,7 +40,6 @@ export default function Dashboard() {
     contaId: "",
   });
 
-  // 🔹 Listas carregadas apenas quando o modal é aberto
   const [categorias, setCategorias] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [contas, setContas] = useState([]);
@@ -52,7 +49,6 @@ export default function Dashboard() {
   }, [mes, ano]);
 
   const carregarResumo = () => {
-    // 🔹 limpa antes de buscar novo mês
     setResumo({
       totalReceitas: 0,
       totalDespesas: 0,
@@ -143,28 +139,24 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
-
-      {/* 🔹 Cabeçalho refinado com títulos reposicionados e filtros à direita */}
-      <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
+    <div className="min-h-screen bg-[#0b0e17] text-gray-100 p-8">
+      {/* 🔹 Cabeçalho */}
+      <header className="mb-10 rounded-xl bg-gradient-to-r from-[#0d0f1a] via-[#0b0d17] to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-
-          {/* 🔸 Título à esquerda */}
           <div className="text-center sm:text-left">
-            <h1 className="text-5xl font-bold text-white leading-tight">
+            <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
               Painel Financeiro
             </h1>
-            <p className="text-3xl font-assinatura text-amber-400 mt-1">
+            <p className="text-2xl font-assinatura text-amber-400 mt-1 italic">
               Família Bertão
             </p>
           </div>
 
-          {/* 🔸 Filtros alinhados à direita */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0">
             <select
               value={mes}
               onChange={(e) => setMes(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg focus:ring-2 focus:ring-amber-500"
+              className="bg-[#161a25] border border-gray-700 text-gray-100 p-2 rounded-lg focus:ring-2 focus:ring-amber-500"
             >
               {meses.map((m, i) => (
                 <option key={i + 1} value={i + 1}>{m}</option>
@@ -175,7 +167,7 @@ export default function Dashboard() {
               type="number"
               value={ano}
               onChange={(e) => setAno(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg w-24 focus:ring-2 focus:ring-amber-500"
+              className="bg-[#161a25] border border-gray-700 text-gray-100 p-2 rounded-lg w-24 focus:ring-2 focus:ring-amber-500"
             />
 
             <button
@@ -188,10 +180,10 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* 🔹 Modal de filtros */}
+      {/* 🔹 Modal Filtros */}
       {showFiltros && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-96">
+          <div className="bg-[#161a25] p-6 rounded-xl shadow-xl w-96 border border-gray-700">
             <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center">
               Filtros do Relatório
             </h2>
@@ -201,7 +193,7 @@ export default function Dashboard() {
                 name="tipo"
                 value={filtros.tipo}
                 onChange={handleFiltroChange}
-                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+                className="w-full bg-[#1b1f2c] p-2 rounded text-gray-100 border border-gray-600"
               >
                 <option value="">Todos os tipos</option>
                 <option value="RECEITA">Receitas</option>
@@ -212,7 +204,7 @@ export default function Dashboard() {
                 name="categoriaId"
                 value={filtros.categoriaId}
                 onChange={handleFiltroChange}
-                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+                className="w-full bg-[#1b1f2c] p-2 rounded text-gray-100 border border-gray-600"
               >
                 <option value="">Todas as categorias</option>
                 {categorias.map((c) => (
@@ -224,7 +216,7 @@ export default function Dashboard() {
                 name="responsavelId"
                 value={filtros.responsavelId}
                 onChange={handleFiltroChange}
-                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+                className="w-full bg-[#1b1f2c] p-2 rounded text-gray-100 border border-gray-600"
               >
                 <option value="">Todos os responsáveis</option>
                 {responsaveis.map((r) => (
@@ -236,7 +228,7 @@ export default function Dashboard() {
                 name="contaId"
                 value={filtros.contaId}
                 onChange={handleFiltroChange}
-                className="w-full bg-gray-700 p-2 rounded text-gray-100"
+                className="w-full bg-[#1b1f2c] p-2 rounded text-gray-100 border border-gray-600"
               >
                 <option value="">Todas as contas</option>
                 {contas.map((c) => (
@@ -263,247 +255,147 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 🔹 Cards resumo estilizados */}
+      {/* 🔹 Cards Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-green-400/30 shadow-lg hover:shadow-green-500/20 rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300">
-          <ArrowUpCircleIcon className="h-10 w-10 text-green-400 drop-shadow-[0_0_4px_rgba(34,197,94,0.5)]" />
-          <div>
-            <p className="text-sm text-gray-400 uppercase tracking-wide">Receitas</p>
-            <p className="text-2xl font-semibold text-green-400">
-              {formatCurrency(resumo.totalReceitas)}
-            </p>
+        {[
+          {
+            title: "Receitas",
+            value: resumo.totalReceitas,
+            color: "green",
+            icon: <ArrowUpCircleIcon className="h-8 w-8 text-green-400" />,
+          },
+          {
+            title: "Despesas Variáveis",
+            value: resumo.totalDespesas,
+            color: "red",
+            icon: <ArrowDownCircleIcon className="h-8 w-8 text-red-400" />,
+          },
+          {
+            title: "Despesas Fixas",
+            value: resumo.totalFixas,
+            color: "yellow",
+            icon: <ExclamationTriangleIcon className="h-8 w-8 text-yellow-400" />,
+          },
+          {
+            title: "Saldo",
+            value: resumo.saldo,
+            color: "blue",
+            icon: <CurrencyDollarIcon className="h-8 w-8 text-blue-400" />,
+          },
+        ].map((card, i) => (
+          <div
+            key={i}
+            className={`bg-[#10141f] border border-${card.color}-400/30 rounded-xl p-5 flex items-center space-x-4 shadow-md hover:shadow-${card.color}-500/30 transition-all duration-300`}
+          >
+            <div className="flex-shrink-0 bg-[#0c0f18] rounded-full p-2">
+              {card.icon}
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide">
+                {card.title}
+              </p>
+              <p className={`text-xl font-semibold text-${card.color}-400`}>
+                {formatCurrency(card.value)}
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-red-400/30 shadow-lg hover:shadow-red-500/20 rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300">
-          <ArrowDownCircleIcon className="h-10 w-10 text-red-400 drop-shadow-[0_0_4px_rgba(248,113,113,0.5)]" />
-          <div>
-            <p className="text-sm text-gray-400 uppercase tracking-wide">Despesas Variáveis</p>
-            <p className="text-2xl font-semibold text-red-400">
-              {formatCurrency(resumo.totalDespesas)}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-yellow-400/30 shadow-lg hover:shadow-yellow-500/20 rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300">
-          <ExclamationTriangleIcon className="h-10 w-10 text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.5)]" />
-          <div>
-            <p className="text-sm text-gray-400 uppercase tracking-wide">Despesas Fixas</p>
-            <p className="text-2xl font-semibold text-yellow-400">
-              {formatCurrency(resumo.totalFixas)}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/30 shadow-lg hover:shadow-blue-500/20 rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300">
-          <CurrencyDollarIcon className="h-10 w-10 text-blue-400 drop-shadow-[0_0_4px_rgba(59,130,246,0.5)]" />
-          <div>
-            <p className="text-sm text-gray-400 uppercase tracking-wide">Saldo</p>
-            <p className="text-2xl font-semibold text-blue-400">
-              {formatCurrency(resumo.saldo)}
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* 🔹 Gráficos, receitas, despesas e lançamentos — preservados */}
-      {/* 🔹 Despesas Variáveis */}
+      {/* 🔹 Gráficos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Variáveis por Categoria</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={resumo.categorias || []}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="total"
-                nameKey="nome"
-                label={renderLabel}
-              >
-                {resumo.categorias?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_DESPESAS[i % COLORS_DESPESAS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Variáveis por Responsável</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={resumo.responsaveis || []}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="total"
-                nameKey="nome"
-                label={renderLabel}
-              >
-                {resumo.responsaveis?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_DESPESAS[i % COLORS_DESPESAS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartBox title="Despesas Variáveis por Categoria" data={resumo.categorias} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        <ChartBox title="Despesas Variáveis por Responsável" data={resumo.responsaveis} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        <ChartBox title="Despesas Fixas por Categoria" data={resumo.fixasCategorias} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        <ChartBox title="Despesas Fixas por Responsável" data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        <ChartBox title="Receitas por Categoria" data={resumo.receitasCategorias} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+        <ChartBox title="Receitas por Responsável" data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
       </div>
 
-      {/* 🔹 Despesas Fixas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Fixas por Categoria</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={resumo.fixasCategorias || []}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="total"
-                nameKey="nome"
-                label={renderLabel}
-              >
-                {resumo.fixasCategorias?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_FIXAS[i % COLORS_FIXAS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Despesas Fixas por Responsável</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={resumo.fixasResponsaveis || []}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="total"
-                nameKey="nome"
-                label={renderLabel}
-              >
-                {resumo.fixasResponsaveis?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_FIXAS[i % COLORS_FIXAS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => formatCurrency(v)} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+      {/* 🔹 Gráfico Mensal */}
+      <div className="bg-[#10141f] p-6 rounded-xl shadow-md border border-gray-800 mt-8">
+        <h2 className="text-lg font-semibold mb-4 text-gray-100">Receitas vs Despesas (Mensal)</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={resumo.mensal || []}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <XAxis dataKey="mes" />
+            <YAxis />
+            <Tooltip formatter={(v) => formatCurrency(v)} />
+            <Legend />
+            <Bar dataKey="receitas" fill="#34d399" name="Receitas" />
+            <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" />
+            <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* 🔹 Receitas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-          <h2 className="text-lg font-semibold mb-4">Receitas por Categoria</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={resumo.receitasCategorias || []}
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                dataKey="total"
-                nameKey="nome"
-                label={renderLabel}
-              >
-                {resumo.receitasCategorias?.map((_, i) => (
-                  <Cell key={i} fill={COLORS_RECEITAS[i %COLORS_RECEITAS.length]} />
-                                                         ))}
-                                                         </Pie>
-                                                         <Tooltip formatter={(v) => formatCurrency(v)} />
-                                                         </PieChart>
-                                                         </ResponsiveContainer>
-                                                         </div>
-                                                             <div className="bg-gray-800 p-6 rounded-xl shadow-lg min-h-[350px]">
-                                                               <h2 className="text-lg font-semibold mb-4">Receitas por Responsável</h2>
-                                                               <ResponsiveContainer width="100%" height={280}>
-                                                                 <PieChart>
-                                                                   <Pie
-                                                                     data={resumo.receitasResponsaveis || []}
-                                                                     cx="50%"
-                                                                     cy="50%"
-                                                                     outerRadius={100}
-                                                                     dataKey="total"
-                                                                     nameKey="nome"
-                                                                     label={renderLabel}
-                                                                   >
-                                                                     {resumo.receitasResponsaveis?.map((_, i) => (
-                                                                       <Cell key={i} fill={COLORS_RECEITAS[i % COLORS_RECEITAS.length]} />
-                                                                     ))}
-                                                                   </Pie>
-                                                                   <Tooltip formatter={(v) => formatCurrency(v)} />
-                                                                 </PieChart>
-                                                               </ResponsiveContainer>
-                                                             </div>
-                                                           </div>
+      {/* 🔹 Últimos Lançamentos */}
+      <div className="bg-[#10141f] p-6 rounded-xl shadow-md border border-gray-800 mt-8">
+        <h2 className="text-lg font-semibold mb-4 text-gray-100">Últimos Lançamentos</h2>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="text-gray-400 text-sm border-b border-gray-700">
+              <th className="p-2">Data</th>
+              <th className="p-2">Descrição</th>
+              <th className="p-2">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {resumo.ultimosLancamentos?.length > 0 ? (
+              resumo.ultimosLancamentos.map((l, idx) => (
+                <tr key={idx} className="border-b border-gray-700 hover:bg-[#161a25] transition-colors">
+                  <td className="p-2">
+                    {dayjs(l.data).isValid()
+                      ? dayjs(l.data).format("DD/MM/YYYY")
+                      : l.data}
+                  </td>
+                  <td className="p-2">{l.descricao}</td>
+                  <td
+                    className={`p-2 font-semibold ${
+                      l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {formatCurrency(l.valor)}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="3" className="p-4 text-center text-gray-400">
+                  Nenhum lançamento encontrado.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
-                                                           {/* 🔹 Gráfico Mensal */}
-                                                           <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
-                                                             <h2 className="text-lg font-semibold mb-4">Receitas vs Despesas (Mensal)</h2>
-                                                             <ResponsiveContainer width="100%" height={300}>
-                                                               <BarChart data={resumo.mensal || []}>
-                                                                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                                                                 <XAxis dataKey="mes" />
-                                                                 <YAxis />
-                                                                 <Tooltip formatter={(v) => formatCurrency(v)} />
-                                                                 <Legend />
-                                                                 <Bar dataKey="receitas" fill="#34d399" name="Receitas" />
-                                                                 <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" />
-                                                                 <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
-                                                               </BarChart>
-                                                             </ResponsiveContainer>
-                                                           </div>
-
-                                                           {/* 🔹 Últimos Lançamentos */}
-                                                           <div className="bg-gray-800 p-6 rounded-xl shadow-lg mt-8">
-                                                             <h2 className="text-lg font-semibold mb-4">Últimos Lançamentos</h2>
-                                                             <table className="w-full text-left border-collapse">
-                                                               <thead>
-                                                                 <tr className="text-gray-400 text-sm border-b border-gray-700">
-                                                                   <th className="p-2">Data</th>
-                                                                   <th className="p-2">Descrição</th>
-                                                                   <th className="p-2">Valor</th>
-                                                                 </tr>
-                                                               </thead>
-                                                               <tbody>
-                                                                 {resumo.ultimosLancamentos?.length > 0 ? (
-                                                                   resumo.ultimosLancamentos.map((l, idx) => (
-                                                                     <tr key={idx} className="border-b border-gray-700">
-                                                                       <td className="p-2">
-                                                                         {dayjs(l.data).isValid()
-                                                                           ? dayjs(l.data).format("DD/MM/YYYY")
-                                                                           : l.data}
-                                                                       </td>
-                                                                       <td className="p-2">{l.descricao}</td>
-                                                                       <td
-                                                                         className={`p-2 font-semibold ${
-                                                                           l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
-                                                                         }`}
-                                                                       >
-                                                                         {formatCurrency(l.valor)}
-                                                                       </td>
-                                                                     </tr>
-                                                                   ))
-                                                                 ) : (
-                                                                   <tr>
-                                                                     <td colSpan="3" className="p-4 text-center text-gray-400">
-                                                                       Nenhum lançamento encontrado.
-                                                                     </td>
-                                                                   </tr>
-                                                                 )}
-                                                               </tbody>
-                                                             </table>
-                                                           </div>
-                                                         </div>
-);
+/* 🔹 Componente reutilizável para gráficos */
+function ChartBox({ title, data, colors, renderLabel, formatCurrency }) {
+  return (
+    <div className="bg-[#10141f] p-6 rounded-xl shadow-md border border-gray-800">
+      <h2 className="text-lg font-semibold mb-4 text-gray-100">{title}</h2>
+      <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+          <Pie
+            data={data || []}
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            dataKey="total"
+            nameKey="nome"
+            label={renderLabel}
+          >
+            {data?.map((_, i) => (
+              <Cell key={i} fill={colors[i % colors.length]} />
+            ))}
+          </Pie>
+          <Tooltip formatter={(v) => formatCurrency(v)} />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
 }
