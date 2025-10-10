@@ -181,7 +181,7 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* 🔹 Gráficos responsivos */}
+      {/* 🔹 Gráficos */}
       <div className="md:grid md:grid-cols-2 gap-6 flex overflow-x-auto space-x-4 md:space-x-0 snap-x snap-mandatory md:overflow-visible pb-4">
         <Section titulo="Despesas Variáveis por Categoria">
           <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
@@ -208,83 +208,30 @@ export default function Dashboard() {
         </Section>
       </div>
 
-      {/* 🔹 Gráfico Mensal */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-blue-400/20 shadow-lg hover:shadow-blue-500/20 rounded-2xl p-4 sm:p-6 mt-10 transition-all duration-300">
-        <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center sm:text-left">
-          Receitas vs Despesas (Mensal)
-        </h2>
-        <div className="w-full h-[250px] sm:h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={resumo.mensal || []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis dataKey="mes" tick={{ fill: "#ccc", fontSize: 12 }} />
-              <YAxis tick={{ fill: "#ccc", fontSize: 12 }} />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
-              <Legend />
-              <Bar dataKey="receitas" fill="#34d399" name="Receitas" />
-              <Bar dataKey="variaveis" fill="#f87171" name="Variáveis" />
-              <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* 🔹 Modal Exportar Relatório */}
+      {showFiltros && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-[90%] max-w-md">
+            <h2 className="text-xl font-semibold text-gray-100 mb-4 text-center">
+              Exportar Relatório
+            </h2>
+            <div className="space-y-3">
+              <Select label="Tipo" value={filtros.tipo} onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })} options={[
+                { label: "Todos", value: "" },
+                { label: "Receita", value: "RECEITA" },
+                { label: "Despesa", value: "DESPESA" },
+              ]} />
+              <Select label="Categoria" value={filtros.categoriaId} onChange={(e) => setFiltros({ ...filtros, categoriaId: e.target.value })} options={[{ label: "Todas", value: "" }, ...categorias.map((c) => ({ label: c.nome, value: c.id }))]} />
+              <Select label="Responsável" value={filtros.responsavelId} onChange={(e) => setFiltros({ ...filtros, responsavelId: e.target.value })} options={[{ label: "Todos", value: "" }, ...responsaveis.map((r) => ({ label: r.nome, value: r.id }))]} />
+              <Select label="Conta/Cartão" value={filtros.contaId} onChange={(e) => setFiltros({ ...filtros, contaId: e.target.value })} options={[{ label: "Todas", value: "" }, ...contas.map((c) => ({ label: c.nome, value: c.id }))]} />
+            </div>
+            <div className="flex justify-between mt-6">
+              <button onClick={() => setShowFiltros(false)} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition">Cancelar</button>
+              <button onClick={exportarRelatorio} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Gerar Excel</button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* 🔹 Últimos lançamentos */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-4 sm:p-6 mt-10 transition-all duration-300">
-        <h2 className="text-lg font-semibold mb-4 text-gray-100 text-center sm:text-left">
-          Últimos Lançamentos
-        </h2>
-
-        {/* 🧾 Layout tabela → cards no mobile */}
-        <div className="hidden sm:block">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-gray-400 text-sm border-b border-gray-700">
-                <th className="p-2">Data</th>
-                <th className="p-2">Descrição</th>
-                <th className="p-2">Valor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resumo.ultimosLancamentos?.length > 0 ? (
-                resumo.ultimosLancamentos.map((l, idx) => (
-                  <tr key={idx} className="border-b border-gray-700 hover:bg-gray-800/40 transition-colors">
-                    <td className="p-2">{dayjs(l.data).format("DD/MM/YYYY")}</td>
-                    <td className="p-2">{l.descricao}</td>
-                    <td className={`p-2 font-semibold ${l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"}`}>
-                      {formatCurrency(l.valor)}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr><td colSpan="3" className="p-4 text-center text-gray-400">Nenhum lançamento encontrado.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* 🪶 Mobile cards */}
-        <div className="sm:hidden space-y-3">
-          {resumo.ultimosLancamentos?.length > 0 ? (
-            resumo.ultimosLancamentos.map((l, idx) => (
-              <div key={idx} className="bg-gray-800/60 rounded-xl p-3 border border-gray-700 flex flex-col">
-                <div className="flex justify-between text-sm text-gray-400">
-                  <span>{dayjs(l.data).format("DD/MM/YYYY")}</span>
-                  <span className={l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"}>
-                    {l.tipo === "RECEITA" ? "Receita" : "Despesa"}
-                  </span>
-                </div>
-                <p className="text-gray-100 text-base font-medium mt-1">{l.descricao}</p>
-                <p className={`text-lg font-semibold ${l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"} mt-1`}>
-                  {formatCurrency(l.valor)}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-400">Nenhum lançamento encontrado.</p>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -327,10 +274,9 @@ function Section({ titulo, children }) {
   );
 }
 
-/* ✅ PieBox com labels no desktop, legenda ordenada no mobile */
+/* 🔹 Gráficos ordenados e responsivos */
 function PieBox({ data, colors, formatCurrency }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  const outerRadius = isMobile ? 70 : 100;
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
     : [];
@@ -344,7 +290,7 @@ function PieBox({ data, colors, formatCurrency }) {
             data={sortedData}
             cx="50%"
             cy="50%"
-            outerRadius={outerRadius}
+            outerRadius={isMobile ? 70 : 100}
             dataKey="total"
             nameKey="nome"
             label={!isMobile ? ({ name, percent, value }) =>
@@ -352,22 +298,25 @@ function PieBox({ data, colors, formatCurrency }) {
             : false}
           >
             {sortedData.map((entry, i) => (
-              <Cell key={`${entry.nome}-${i}`} fill={colors[i % colors.length]} />
+              <Cell key={i} fill={colors[i % colors.length]} />
             ))}
           </Pie>
           <Tooltip formatter={(v) => formatCurrency(v)} />
         </PieChart>
       </ResponsiveContainer>
 
-      {/* 🔹 Legenda fixa e ordenada no mobile */}
-      {isMobile && sortedData.length > 0 && (
+      {/* 🔹 Legenda ordenada e visível */}
+      {sortedData.length > 0 && (
         <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
           {sortedData.map((item, i) => {
             const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
             return (
-              <li key={i} className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
-                <span className="truncate">{item.nome} — {formatCurrency(item.total)} ({percent}%)</span>
+              <li key={i} className="flex items-center gap-2 justify-between">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+                  <span className="truncate">{item.nome}</span>
+                </div>
+                <span>{percent}%</span>
               </li>
             );
           })}
@@ -377,3 +326,22 @@ function PieBox({ data, colors, formatCurrency }) {
   );
 }
 
+/* 🔹 Select usado no modal */
+function Select({ label, value, onChange, options }) {
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+      >
+        {options.map((opt, idx) => (
+          <option key={idx} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
