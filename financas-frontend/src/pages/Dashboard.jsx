@@ -10,7 +10,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
-import api from "../api"; // ✅ usa configuração global de axios
+import api from "../api";
 
 export default function Dashboard() {
   const [resumo, setResumo] = useState({
@@ -32,7 +32,6 @@ export default function Dashboard() {
 
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
-
   const [showFiltros, setShowFiltros] = useState(false);
   const [filtros, setFiltros] = useState({
     tipo: "",
@@ -79,7 +78,6 @@ export default function Dashboard() {
 
   const abrirModalFiltros = async () => {
     setShowFiltros(true);
-
     if (categorias.length && responsaveis.length && contas.length) return;
 
     try {
@@ -142,7 +140,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
 
-      {/* 🔹 Cabeçalho refinado */}
+      {/* 🔹 Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
           <div className="text-center sm:text-left">
@@ -190,31 +188,43 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* 🔹 Agrupamento dos gráficos lado a lado */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Section titulo="Despesas Variáveis por Categoria">
-          <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-        </Section>
+      {/* 🔹 Gráficos responsivos */}
+      <div className="md:grid md:grid-cols-2 gap-6 flex overflow-x-auto space-x-4 md:space-x-0 snap-x snap-mandatory md:overflow-visible pb-4">
+        <div className="snap-start min-w-[90%] md:min-w-0">
+          <Section titulo="Despesas Variáveis por Categoria">
+            <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
 
-        <Section titulo="Despesas Variáveis por Responsável">
-          <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-        </Section>
+        <div className="snap-start min-w-[90%] md:min-w-0">
+          <Section titulo="Despesas Variáveis por Responsável">
+            <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
 
-        <Section titulo="Despesas Fixas por Categoria">
-          <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-        </Section>
+        <div className="snap-start min-w-[90%] md:min-w-0">
+          <Section titulo="Despesas Fixas por Categoria">
+            <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
 
-        <Section titulo="Despesas Fixas por Responsável">
-          <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-        </Section>
+        <div className="snap-start min-w-[90%] md:min-w-0">
+          <Section titulo="Despesas Fixas por Responsável">
+            <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
 
-        <Section titulo="Receitas por Categoria">
-          <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-        </Section>
+        <div className="snap-start min-w-[90%] md:min-w-0">
+          <Section titulo="Receitas por Categoria">
+            <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
 
-        <Section titulo="Receitas por Responsável">
-          <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
-        </Section>
+        <div className="snap-start min-w-[90%] md:min-w-0">
+          <Section titulo="Receitas por Responsável">
+            <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
       </div>
 
       {/* 🔹 Gráfico Mensal */}
