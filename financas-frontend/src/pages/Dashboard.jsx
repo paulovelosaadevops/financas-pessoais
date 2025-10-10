@@ -322,18 +322,21 @@ function Section({ titulo, children }) {
   );
 }
 
-/* ✅ PieBox com labels no desktop e legenda no mobile */
+/* ✅ PieBox com labels no desktop, legenda no mobile e ordenação decrescente */
 function PieBox({ data, colors, formatCurrency }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const outerRadius = isMobile ? 70 : 100;
   const totalGeral = data?.reduce((sum, item) => sum + item.total, 0) || 0;
+
+  // 🔹 Ordena do maior para o menor total
+  const sortedData = [...(data || [])].sort((a, b) => b.total - a.total);
 
   return (
     <div className="flex flex-col items-center">
       <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
         <PieChart>
           <Pie
-            data={data || []}
+            data={sortedData}
             cx="50%"
             cy="50%"
             outerRadius={outerRadius}
@@ -343,7 +346,7 @@ function PieBox({ data, colors, formatCurrency }) {
               `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
             : false}
           >
-            {data?.map((_, i) => (
+            {sortedData.map((_, i) => (
               <Cell key={i} fill={colors[i % colors.length]} />
             ))}
           </Pie>
@@ -352,9 +355,9 @@ function PieBox({ data, colors, formatCurrency }) {
       </ResponsiveContainer>
 
       {/* 🔹 Legenda fixa no mobile */}
-      {isMobile && data?.length > 0 && (
+      {isMobile && sortedData.length > 0 && (
         <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
-          {data.map((item, i) => {
+          {sortedData.map((item, i) => {
             const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
             return (
               <li key={i} className="flex items-center gap-2">
