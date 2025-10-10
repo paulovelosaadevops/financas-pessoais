@@ -72,10 +72,6 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
-  const handleFiltroChange = (e) => {
-    setFiltros({ ...filtros, [e.target.name]: e.target.value });
-  };
-
   const abrirModalFiltros = async () => {
     setShowFiltros(true);
     if (categorias.length && responsaveis.length && contas.length) return;
@@ -192,37 +188,37 @@ export default function Dashboard() {
       <div className="md:grid md:grid-cols-2 gap-6 flex overflow-x-auto space-x-4 md:space-x-0 snap-x snap-mandatory md:overflow-visible pb-4">
         <div className="snap-start min-w-[90%] md:min-w-0">
           <Section titulo="Despesas Variáveis por Categoria">
-            <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+            <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
           </Section>
         </div>
 
         <div className="snap-start min-w-[90%] md:min-w-0">
           <Section titulo="Despesas Variáveis por Responsável">
-            <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+            <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
           </Section>
         </div>
 
         <div className="snap-start min-w-[90%] md:min-w-0">
           <Section titulo="Despesas Fixas por Categoria">
-            <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+            <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
           </Section>
         </div>
 
         <div className="snap-start min-w-[90%] md:min-w-0">
           <Section titulo="Despesas Fixas por Responsável">
-            <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+            <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
           </Section>
         </div>
 
         <div className="snap-start min-w-[90%] md:min-w-0">
           <Section titulo="Receitas por Categoria">
-            <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+            <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
           </Section>
         </div>
 
         <div className="snap-start min-w-[90%] md:min-w-0">
           <Section titulo="Receitas por Responsável">
-            <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} renderLabel={renderLabel} formatCurrency={formatCurrency} />
+            <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
           </Section>
         </div>
       </div>
@@ -326,18 +322,23 @@ function Section({ titulo, children }) {
   );
 }
 
-function PieBox({ data, colors, renderLabel, formatCurrency }) {
+function PieBox({ data, colors, formatCurrency }) {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const outerRadius = isMobile ? 70 : 100;
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
       <PieChart>
         <Pie
           data={data || []}
           cx="50%"
           cy="50%"
-          outerRadius={100}
+          outerRadius={outerRadius}
           dataKey="total"
           nameKey="nome"
-          label={renderLabel}
+          label={!isMobile ? ({ name, percent, value }) =>
+            `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
+          : false}
         >
           {data?.map((_, i) => (
             <Cell key={i} fill={colors[i % colors.length]} />
