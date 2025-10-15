@@ -102,6 +102,11 @@ export default function Dashboard() {
   const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
   const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
 
+  // 🔹 Novo total de despesas fixas pagas
+  const totalFixasPagas = pagamentos
+    .filter((p) => p.pago)
+    .reduce((sum, i) => sum + (i.valor || 0), 0);
+
   const COLORS_RECEITAS = ["#34d399", "#10b981", "#059669", "#047857"];
   const COLORS_DESPESAS = ["#f87171", "#ef4444", "#dc2626", "#b91c1c"];
   const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"];
@@ -151,10 +156,11 @@ export default function Dashboard() {
       </header>
 
       {/* Cards resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
         <Card cor="green" titulo="Receitas" valor={resumo.totalReceitas} Icon={ArrowUpCircleIcon} />
         <Card cor="red" titulo="Despesas Variáveis" valor={resumo.totalDespesas} Icon={ArrowDownCircleIcon} />
         <Card cor="yellow" titulo="Despesas Fixas" valor={resumo.totalFixas} Icon={ExclamationTriangleIcon} />
+        <Card cor="purple" titulo="Despesas Fixas Pagas" valor={totalFixasPagas} Icon={CurrencyDollarIcon} />
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
@@ -171,24 +177,28 @@ export default function Dashboard() {
         </div>
 
         {/* Checklist lateral */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
-          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
+        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col max-h-[720px]">
+          <h2 className="text-lg font-semibold mb-3 text-gray-100">
+            📋 Pagamentos do Mês
+          </h2>
 
-          <PagamentosGrupo
-            titulo="💰 Débito / Conta"
-            lista={fixasDebito}
-            total={totalDebito}
-            togglePago={togglePago}
-            formatCurrency={formatCurrency}
-          />
+          <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+            <PagamentosGrupo
+              titulo="💰 Débito / Conta"
+              lista={fixasDebito}
+              total={totalDebito}
+              togglePago={togglePago}
+              formatCurrency={formatCurrency}
+            />
 
-          <PagamentosGrupo
-            titulo="💳 Cartão de Crédito"
-            lista={fixasCredito}
-            total={totalCredito}
-            togglePago={togglePago}
-            formatCurrency={formatCurrency}
-          />
+            <PagamentosGrupo
+              titulo="💳 Cartão de Crédito"
+              lista={fixasCredito}
+              total={totalCredito}
+              togglePago={togglePago}
+              formatCurrency={formatCurrency}
+            />
+          </div>
         </div>
       </div>
 
@@ -265,6 +275,7 @@ function Card({ cor, titulo, valor, Icon }) {
     red: "text-red-400",
     yellow: "text-yellow-400",
     blue: "text-blue-400",
+    purple: "text-purple-400",
   }[cor];
 
   return (
