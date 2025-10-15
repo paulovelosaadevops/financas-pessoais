@@ -74,24 +74,33 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
-  const carregarPagamentosFixos = () => {
-    api
-      .get(`/lancamentos/fixas?ano=${ano}&mes=${mes}`)
-      .then((res) => setPagamentos(res.data || []))
-      .catch((err) => console.error("Erro ao carregar despesas fixas:", err));
+  const carregarPagamentosFixos = async () => {
+    try {
+      const res = await api.get("/parametros/despesas-fixas");
+      if (Array.isArray(res.data)) {
+        const fixas = res.data.map((f) => ({
+          id: f.id,
+          descricao: f.descricao,
+          valor: f.valor,
+          data: f.diaVencimento
+            ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
+            : dayjs().format("YYYY-MM-DD"),
+          pago: false,
+        }));
+        setPagamentos(fixas);
+      } else {
+        setPagamentos([]);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar despesas fixas:", err);
+      setPagamentos([]);
+    }
   };
 
-  const togglePago = async (id, pagoAtual) => {
-    try {
-      const novoStatus = !pagoAtual;
-      await api.patch(`/lancamentos/${id}`, { pago: novoStatus });
-      setPagamentos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, pago: novoStatus } : p))
-      );
-    } catch (error) {
-      console.error("Erro ao atualizar status de pagamento:", error);
-      alert("Falha ao atualizar o status de pagamento.");
-    }
+  const togglePago = (id) => {
+    setPagamentos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
+    );
   };
 
   const abrirModalFiltros = async () => {
@@ -218,14 +227,16 @@ export default function Dashboard() {
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
           <div className="flex-1 overflow-y-auto max-h-[380px] pr-1">
-            {pagamentos.length > 0 ? (
+            {pagamentos.length === 0 ? (
+              <p className="text-gray-400 text-sm italic">Nenhum pagamento fixo encontrado.</p>
+            ) : (
               pagamentos.map((item) => (
                 <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={item.pago}
-                      onChange={() => togglePago(item.id, item.pago)}
+                      onChange={() => togglePago(item.id)}
                       className="form-checkbox text-green-500 rounded-md h-5 w-5"
                     />
                     <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
@@ -238,8 +249,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))
-            ) : (
-              <p className="text-gray-400 text-sm italic">Nenhum pagamento fixo encontrado.</p>
             )}
           </div>
         </div>
@@ -263,48 +272,11 @@ export default function Dashboard() {
           <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
         </Section>
       </div>
-
-      {/* 🔹 Últimos Lançamentos */}
-      <div className="mt-10 bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6">
-        <h2 className="text-lg font-semibold mb-4 text-gray-100">Últimos Lançamentos</h2>
-        {resumo.ultimosLancamentos && resumo.ultimosLancamentos.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-800 text-gray-300 text-sm uppercase tracking-wide">
-                  <th className="py-2 px-3 text-left border-b border-gray-700">Data</th>
-                  <th className="py-2 px-3 text-left border-b border-gray-700">Tipo</th>
-                  <th className="py-2 px-3 text-left border-b border-gray-700">Categoria</th>
-                  <th className="py-2 px-3 text-left border-b border-gray-700">Descrição</th>
-                  <th className="py-2 px-3 text-right border-b border-gray-700">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resumo.ultimosLancamentos.slice(0, 8).map((l, idx) => (
-                  <tr
-                    key={idx}
-                    className={`text-sm ${idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800/70"} hover:bg-gray-700/40 transition`}
-                  >
-                    <td className="py-2 px-3 text-gray-300">{dayjs(l.data).format("DD/MM/YYYY")}</td>
-                    <td className={`py-2 px-3 font-semibold ${l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"}`}>
-                      {l.tipo}
-                    </td>
-                    <td className="py-2 px-3 text-gray-300 truncate">{l.categoria?.nome || "-"}</td>
-                    <td className="py-2 px-3 text-gray-300 truncate">{l.descricao || "-"}</td>
-                    <td className="py-2 px-3 text-right text-gray-100">{formatCurrency(l.valor)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-gray-400 text-sm italic">Nenhum lançamento encontrado neste período.</p>
-        )}
-      </div>
     </div>
   );
 }
 
+/* 🔹 Subcomponentes */
 function Card({ cor, titulo, valor, Icon }) {
   const corBorda = {
     green: "border-green-400/30 hover:shadow-green-500/20",
@@ -342,6 +314,7 @@ function Section({ titulo, children }) {
   );
 }
 
+/* 🔹 Gráficos ordenados e responsivos */
 function PieBox({ data, colors, formatCurrency }) {
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
