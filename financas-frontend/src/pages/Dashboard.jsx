@@ -36,18 +36,24 @@ export default function Dashboard() {
   const [categorias, setCategorias] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
 
-  // 🔹 Carrega localStorage no início
+  // 🔹 Carrega pagamentos específicos do mês/ano corrente
   useEffect(() => {
-    const salvos = localStorage.getItem("pagamentos");
-    if (salvos) setPagamentos(JSON.parse(salvos));
-  }, []);
+    const chave = `pagamentos-${ano}-${mes}`;
+    const salvos = localStorage.getItem(chave);
+    if (salvos) {
+      setPagamentos(JSON.parse(salvos));
+    } else {
+      setPagamentos([]);
+    }
+  }, [mes, ano]);
 
-  // 🔹 Salva pagamentos no localStorage sempre que mudam
+  // 🔹 Salva pagamentos do mês/ano corrente
   useEffect(() => {
     if (pagamentos.length > 0) {
-      localStorage.setItem("pagamentos", JSON.stringify(pagamentos));
+      const chave = `pagamentos-${ano}-${mes}`;
+      localStorage.setItem(chave, JSON.stringify(pagamentos));
     }
-  }, [pagamentos]);
+  }, [pagamentos, mes, ano]);
 
   useEffect(() => {
     carregarCategorias();
@@ -89,7 +95,7 @@ export default function Dashboard() {
             : dayjs().format("YYYY-MM-DD"),
           categoriaNome: f.categoria?.nome || "",
           conta: f.conta || {},
-          pago: pagamentos.find((p) => p.id === f.id)?.pago || false, // mantém estado anterior
+          pago: pagamentos.find((p) => p.id === f.id)?.pago ?? false, // mantém estado do mês corrente
         }));
 
         setPagamentos(
