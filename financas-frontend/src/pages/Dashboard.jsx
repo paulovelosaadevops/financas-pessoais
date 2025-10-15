@@ -31,17 +31,7 @@ export default function Dashboard() {
 
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
-  const [showFiltros, setShowFiltros] = useState(false);
-  const [filtros, setFiltros] = useState({
-    tipo: "",
-    categoriaId: "",
-    responsavelId: "",
-    contaId: "",
-  });
-
   const [categorias, setCategorias] = useState([]);
-  const [responsaveis, setResponsaveis] = useState([]);
-  const [contas, setContas] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
 
   useEffect(() => {
@@ -59,28 +49,10 @@ export default function Dashboard() {
       setCategorias(res.data || []);
     } catch (err) {
       console.error("Erro ao carregar categorias:", err);
-      setCategorias([]);
     }
   };
 
   const carregarResumo = () => {
-    setResumo({
-      totalReceitas: 0,
-      totalDespesas: 0,
-      totalFixas: 0,
-      saldo: 0,
-      categorias: [],
-      responsaveis: [],
-      bancos: [],
-      ultimosLancamentos: [],
-      receitasCategorias: [],
-      receitasResponsaveis: [],
-      receitasBancos: [],
-      fixasCategorias: [],
-      fixasResponsaveis: [],
-      mensal: [],
-    });
-
     api
       .get(`/dashboard?ano=${ano}&mes=${mes}`)
       .then((res) => setResumo(res.data))
@@ -91,25 +63,19 @@ export default function Dashboard() {
     try {
       const res = await api.get("/parametros/despesas-fixas");
       if (Array.isArray(res.data)) {
-        const fixas = res.data.map((f) => {
-          const categoriaNomeDireta = f.categoria?.nome;
-          const categoriaBuscada = categorias.find((c) => c.id === f.categoria?.id);
-          return {
-            id: f.id,
-            descricao: f.descricao,
-            valor: f.valor,
-            data: f.diaVencimento
-              ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
-              : dayjs().format("YYYY-MM-DD"),
-            categoriaNome: categoriaNomeDireta || categoriaBuscada?.nome || "",
-            conta: f.conta || {},
-            pago: false,
-          };
-        });
+        const fixas = res.data.map((f) => ({
+          id: f.id,
+          descricao: f.descricao,
+          valor: f.valor,
+          data: f.diaVencimento
+            ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
+            : dayjs().format("YYYY-MM-DD"),
+          categoriaNome: f.categoria?.nome || "",
+          conta: f.conta || {},
+          pago: false,
+        }));
 
-        setPagamentos(
-          fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
-        );
+        setPagamentos(fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date()));
       } else {
         setPagamentos([]);
       }
@@ -125,108 +91,33 @@ export default function Dashboard() {
     );
   };
 
-  const abrirModalFiltros = async () => {
-    setShowFiltros(true);
-    if (categorias.length && responsaveis.length && contas.length) return;
-
-    try {
-      const [catRes, respRes, contRes] = await Promise.all([
-        api.get("/categorias"),
-        api.get("/parametros/responsaveis"),
-        api.get("/parametros/contas"),
-      ]);
-      setCategorias(catRes.data || []);
-      setResponsaveis(respRes.data || []);
-      setContas(contRes.data || []);
-    } catch (error) {
-      console.error("Erro ao carregar listas de filtros:", error);
-    }
-  };
-
-  const exportarRelatorio = async () => {
-    try {
-      const params = new URLSearchParams();
-      params.append("mes", mes);
-      params.append("ano", ano);
-      if (filtros.tipo) params.append("tipo", filtros.tipo);
-      if (filtros.categoriaId) params.append("categoriaId", filtros.categoriaId);
-      if (filtros.responsavelId) params.append("responsavelId", filtros.responsavelId);
-      if (filtros.contaId) params.append("contaId", filtros.contaId);
-
-      const response = await api.get(`/relatorios/exportar?${params.toString()}`, {
-        responseType: "blob",
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `relatorio-lancamentos-${mes}-${ano}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setShowFiltros(false);
-    } catch (error) {
-      console.error("Erro ao exportar relatório:", error);
-      alert("Falha ao gerar o relatório. Verifique o backend.");
-    }
-  };
-
   const COLORS_RECEITAS = ["#34d399", "#10b981", "#059669", "#047857"];
   const COLORS_DESPESAS = ["#f87171", "#ef4444", "#dc2626", "#b91c1c"];
   const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"];
-
-  const formatCurrency = (value) =>
-    `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-
-  const meses = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ];
+  const formatCurrency = (v) => `R$ ${Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8">
-
-      {/* 🔹 Cabeçalho */}
+      {/* Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
           <div className="text-center sm:text-left">
-            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight">
-              Painel Financeiro
-            </h1>
-            <p className="text-2xl sm:text-3xl font-assinatura text-amber-400 mt-1">
-              Família Bertão
-            </p>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white">Painel Financeiro</h1>
+            <p className="text-2xl sm:text-3xl font-assinatura text-amber-400 mt-1">Família Bertão</p>
           </div>
-
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0 justify-center">
-            <select
-              value={mes}
-              onChange={(e) => setMes(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg focus:ring-2 focus:ring-amber-500"
-            >
-              {meses.map((m, i) => (
-                <option key={i + 1} value={i + 1}>{m}</option>
-              ))}
+            <select value={mes} onChange={(e) => setMes(Number(e.target.value))}
+              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg focus:ring-2 focus:ring-amber-500">
+              {meses.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
             </select>
-
-            <input
-              type="number"
-              value={ano}
-              onChange={(e) => setAno(Number(e.target.value))}
-              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg w-24 focus:ring-2 focus:ring-amber-500"
-            />
-
-            <button
-              onClick={abrirModalFiltros}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition-all duration-200"
-            >
-              📊 Exportar
-            </button>
+            <input type="number" value={ano} onChange={(e) => setAno(Number(e.target.value))}
+              className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg w-24 focus:ring-2 focus:ring-amber-500"/>
           </div>
         </div>
       </header>
 
-      {/* 🔹 Cards resumo */}
+      {/* Cards resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <Card cor="green" titulo="Receitas" valor={resumo.totalReceitas} Icon={ArrowUpCircleIcon} />
         <Card cor="red" titulo="Despesas Variáveis" valor={resumo.totalDespesas} Icon={ArrowDownCircleIcon} />
@@ -234,128 +125,67 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* 🔹 Gráficos + Checklist */}
+      {/* Gráficos de despesas + checklist lateral */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        {/* Gráficos */}
         <div className="lg:col-span-2 space-y-6">
           <Section titulo="Despesas Variáveis por Categoria">
             <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
           </Section>
-
           <Section titulo="Despesas Variáveis por Responsável">
             <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
           </Section>
-
-          <Section titulo="Receitas por Categoria">
-            <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-          </Section>
-
-          <Section titulo="Receitas por Responsável">
-            <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-          </Section>
-
-          <Section titulo="Receitas por Banco">
-            <PieBox data={resumo.receitasBancos} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-          </Section>
-
-          <Section titulo="Despesas Fixas por Categoria">
-            <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
-          </Section>
-
-          <Section titulo="Despesas Fixas por Responsável">
-            <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
-          </Section>
         </div>
 
-        {/* 🔹 Checklist lateral */}
+        {/* Checklist */}
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
-
           {(() => {
-            const normalize = (str) =>
-              (str || "")
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .toUpperCase();
-
+            const normalize = (str) => (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
             const fixasCredito = pagamentos.filter((p) => {
-              const nomeCategoria = normalize(p.categoriaNome);
-              const nomeConta = normalize(p.conta?.nome);
-              return (
-                nomeCategoria.includes("CARTAO DE CREDITO") ||
-                nomeConta.includes("CREDITO")
-              );
+              const cat = normalize(p.categoriaNome);
+              const conta = normalize(p.conta?.nome);
+              return cat.includes("CARTAO DE CREDITO") || conta.includes("CREDITO");
             });
-
             const fixasDebito = pagamentos.filter((p) => {
-              const nomeCategoria = normalize(p.categoriaNome);
-              const nomeConta = normalize(p.conta?.nome);
-              return (
-                !nomeCategoria.includes("CARTAO DE CREDITO") &&
-                !nomeConta.includes("CREDITO")
-              );
+              const cat = normalize(p.categoriaNome);
+              const conta = normalize(p.conta?.nome);
+              return !cat.includes("CARTAO DE CREDITO") && !conta.includes("CREDITO");
             });
-
-            const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
-            const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
+            const totalDebito = fixasDebito.reduce((s, i) => s + (i.valor || 0), 0);
+            const totalCredito = fixasCredito.reduce((s, i) => s + (i.valor || 0), 0);
 
             const renderGrupo = (titulo, lista, total) => (
               <div className="mb-4">
                 <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {titulo === "💰 Débito / Conta" && <span className="text-amber-400">💰</span>}
-                    {titulo === "💳 Cartão de Crédito" && <span className="text-blue-400">💳</span>}
+                    {titulo.includes("Débito") && <span className="text-amber-400">💰</span>}
+                    {titulo.includes("Crédito") && <span className="text-blue-400">💳</span>}
                     <span>{titulo}</span>
                   </div>
-                  <span className="text-gray-300 text-sm font-medium">
-                    {formatCurrency(total)}
-                  </span>
+                  <span className="text-gray-300 text-sm font-medium">{formatCurrency(total)}</span>
                 </h3>
-                <div
-                  className={`space-y-1 ${
-                    lista.length > 8
-                      ? "overflow-y-auto max-h-[360px]"
-                      : "overflow-y-visible"
-                  }`}
-                >
-                  {lista.length === 0 ? (
-                    <p className="text-gray-500 text-xs italic">
-                      Nenhum lançamento encontrado.
-                    </p>
-                  ) : (
-                    lista.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
-                      >
+                {lista.length === 0 ? (
+                  <p className="text-gray-500 text-xs italic">Nenhum lançamento encontrado.</p>
+                ) : (
+                  <div className={`space-y-1 ${lista.length > 8 ? "overflow-y-auto max-h-[360px]" : "overflow-y-visible"}`}>
+                    {lista.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
                         <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={item.pago}
-                            onChange={() => togglePago(item.id)}
-                            className="form-checkbox text-green-500 rounded-md h-5 w-5"
-                          />
-                          <span
-                            className={`truncate ${
-                              item.pago
-                                ? "text-green-400 line-through"
-                                : "text-gray-200"
-                            }`}
-                          >
+                          <input type="checkbox" checked={item.pago} onChange={() => togglePago(item.id)}
+                            className="form-checkbox text-green-500 rounded-md h-5 w-5" />
+                          <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
                             {item.descricao}
                           </span>
                         </label>
                         <div className="text-right">
-                          <p className="text-sm text-gray-400">
-                            {dayjs(item.data).format("DD/MM")}
-                          </p>
-                          <p className="text-sm font-medium">
-                            {formatCurrency(item.valor)}
-                          </p>
+                          <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
+                          <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
 
@@ -369,7 +199,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔹 Últimos Lançamentos */}
+      {/* Gráficos restantes */}
+      <div className="space-y-6 mb-10">
+        <Section titulo="Receitas por Categoria">
+          <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+        </Section>
+        <Section titulo="Receitas por Responsável">
+          <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+        </Section>
+        <Section titulo="Receitas por Banco">
+          <PieBox data={resumo.receitasBancos} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+        </Section>
+        <Section titulo="Despesas Fixas por Categoria">
+          <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
+        </Section>
+        <Section titulo="Despesas Fixas por Responsável">
+          <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
+        </Section>
+      </div>
+
+      {/* Últimos lançamentos */}
       <Section titulo="Últimos Lançamentos do Mês">
         <div className="overflow-x-auto">
           {resumo.ultimosLancamentos.length === 0 ? (
@@ -408,15 +257,8 @@ export default function Dashboard() {
   );
 }
 
-/* 🔹 Subcomponentes */
+/* Componentes */
 function Card({ cor, titulo, valor, Icon }) {
-  const corBorda = {
-    green: "border-green-400/30 hover:shadow-green-500/20",
-    red: "border-red-400/30 hover:shadow-red-500/20",
-    yellow: "border-yellow-400/30 hover:shadow-yellow-500/20",
-    blue: "border-blue-400/30 hover:shadow-blue-500/20",
-  }[cor];
-
   const corTexto = {
     green: "text-green-400",
     red: "text-red-400",
@@ -424,65 +266,49 @@ function Card({ cor, titulo, valor, Icon }) {
     blue: "text-blue-400",
   }[cor];
 
+  const corBorda = {
+    green: "border-green-400/30",
+    red: "border-red-400/30",
+    yellow: "border-yellow-400/30",
+    blue: "border-blue-400/30",
+  }[cor];
+
   return (
-    <div
-      className={`bg-gradient-to-br from-gray-900 to-gray-950 border ${corBorda} shadow-lg rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300`}
-    >
+    <div className={`bg-gradient-to-br from-gray-900 to-gray-950 border ${corBorda} shadow-lg rounded-2xl p-6 flex items-center space-x-4`}>
       <Icon className={`h-10 w-10 ${corTexto}`} />
       <div>
         <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
-        <p className={`text-2xl font-semibold ${corTexto}`}>
-          R$ {Number(valor || 0            ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                       </p>
-                                     </div>
-                                   </div>
-                                 );
-                               }
+        <p className={`text-2xl font-semibold ${corTexto}`}>{`R$ ${Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</p>
+      </div>
+    </div>
+  );
+}
 
-                               function Section({ titulo, children }) {
-                                 return (
-                                   <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
-                                     <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
-                                     {children}
-                                   </div>
-                                 );
-                               }
+function Section({ titulo, children }) {
+  return (
+    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6">
+      <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
+      {children}
+    </div>
+  );
+}
 
-                               function PieBox({ data, colors, formatCurrency }) {
-                                 const sortedData = Array.isArray(data)
-                                   ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
-                                   : [];
-                                 const totalGeral = sortedData.reduce(
-                                   (sum, item) => sum + (item.total || 0),
-                                   0
-                                 );
+function PieBox({ data, colors, formatCurrency }) {
+  const sorted = Array.isArray(data) ? [...data].sort((a,b)=> (b.total||0)-(a.total||0)) : [];
+  const total = sorted.reduce((s,i)=>s+(i.total||0),0);
 
-                                 return (
-                                   <div className="flex flex-col items-center w-full">
-                                     <ResponsiveContainer width="100%" height={280}>
-                                       <PieChart>
-                                         <Pie
-                                           data={sortedData}
-                                           cx="50%"
-                                           cy="50%"
-                                           outerRadius={100}
-                                           dataKey="total"
-                                           nameKey="nome"
-                                           label={({ name, percent, value }) =>
-                                             `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
-                                           }
-                                         >
-                                           {sortedData.map((entry, i) => (
-                                             <Cell key={i} fill={colors[i % colors.length]} />
-                                           ))}
-                                         </Pie>
-                                         <Tooltip formatter={(v) => formatCurrency(v)} />
-                                       </PieChart>
-                                     </ResponsiveContainer>
-                                     <p className="text-xs text-gray-400 mt-2">
-                                       Total geral: {formatCurrency(totalGeral)}
-                                     </p>
-                                   </div>
-                                 );
-                               }
-
+  return (
+    <div className="flex flex-col items-center w-full">
+      <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+          <Pie data={sorted} cx="50%" cy="50%" outerRadius={100} dataKey="total" nameKey="nome"
+            label={({ name, percent, value }) => `${name} - ${formatCurrency(value)} (${(percent*100).toFixed(1)}%)`}>
+            {sorted.map((entry,i)=>(<Cell key={i} fill={colors[i%colors.length]} />))}
+          </Pie>
+          <Tooltip formatter={(v)=>formatCurrency(v)} />
+        </PieChart>
+      </ResponsiveContainer>
+      <p className="text-xs text-gray-400 mt-2">Total: {formatCurrency(total)}</p>
+    </div>
+  );
+}
