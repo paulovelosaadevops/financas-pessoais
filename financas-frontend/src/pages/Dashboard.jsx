@@ -254,7 +254,6 @@ export default function Dashboard() {
             const fixasCredito = pagamentos.filter((p) => {
               const nomeCategoria = (p.categoriaNome || "").toUpperCase();
               const nomeConta = (p.conta?.nome || "").toUpperCase();
-
               return (
                 nomeCategoria.includes("CARTÃO DE CRÉDITO") ||
                 nomeCategoria.includes("CARTAO DE CREDITO") ||
@@ -266,7 +265,6 @@ export default function Dashboard() {
             const fixasDebito = pagamentos.filter((p) => {
               const nomeCategoria = (p.categoriaNome || "").toUpperCase();
               const nomeConta = (p.conta?.nome || "").toUpperCase();
-
               return (
                 !nomeCategoria.includes("CARTÃO DE CRÉDITO") &&
                 !nomeCategoria.includes("CARTAO DE CREDITO") &&
@@ -275,12 +273,21 @@ export default function Dashboard() {
               );
             });
 
-            const renderGrupo = (titulo, lista) => (
+            // 💰 Totais formatados
+            const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
+            const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
+
+            const renderGrupo = (titulo, lista, total) => (
               <div className="mb-4">
-                <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1 flex items-center gap-2">
-                  {titulo === "💰 Débito / Conta" && <span className="text-amber-400">💰</span>}
-                  {titulo === "💳 Cartão de Crédito" && <span className="text-blue-400">💳</span>}
-                  {titulo}
+                <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {titulo === "💰 Débito / Conta" && <span className="text-amber-400">💰</span>}
+                    {titulo === "💳 Cartão de Crédito" && <span className="text-blue-400">💳</span>}
+                    <span>{titulo}</span>
+                  </div>
+                  <span className="text-gray-300 text-sm font-medium">
+                    {formatCurrency(total)}
+                  </span>
                 </h3>
                 <div
                   className={`space-y-1 ${
@@ -333,8 +340,8 @@ export default function Dashboard() {
 
             return (
               <>
-                {renderGrupo("💰 Débito / Conta", fixasDebito)}
-                {renderGrupo("💳 Cartão de Crédito", fixasCredito)}
+                {renderGrupo("💰 Débito / Conta", fixasDebito, totalDebito)}
+                {renderGrupo("💳 Cartão de Crédito", fixasCredito, totalCredito)}
               </>
             );
           })()}
