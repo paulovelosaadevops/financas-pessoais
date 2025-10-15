@@ -84,6 +84,7 @@ export default function Dashboard() {
           data: f.diaVencimento
             ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
             : dayjs().format("YYYY-MM-DD"),
+          categoria: f.categoria || {},
           conta: f.conta || {},
           pago: false,
         }));
@@ -233,20 +234,24 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
           {(() => {
-            const fixasCredito = pagamentos.filter(
-              (p) =>
-                p.conta?.nome?.toLowerCase().includes("crédito") ||
-                p.conta?.tipo?.toLowerCase().includes("crédito")
-            );
-            const fixasDebito = pagamentos.filter(
-              (p) =>
-                !p.conta?.nome?.toLowerCase().includes("crédito") &&
-                !p.conta?.tipo?.toLowerCase().includes("crédito")
-            );
+            // 🔹 Filtra corretamente usando a categoria "CARTÃO DE CRÉDITO"
+            const fixasCredito = pagamentos.filter((p) => {
+              const categoriaNome = p.categoria?.nome?.toLowerCase() || "";
+              const contaNome = p.conta?.nome?.toLowerCase() || "";
+              return categoriaNome.includes("cartão de crédito") || contaNome.includes("crédito");
+            });
+
+            const fixasDebito = pagamentos.filter((p) => {
+              const categoriaNome = p.categoria?.nome?.toLowerCase() || "";
+              const contaNome = p.conta?.nome?.toLowerCase() || "";
+              return !categoriaNome.includes("cartão de crédito") && !contaNome.includes("crédito");
+            });
 
             const renderGrupo = (titulo, lista) => (
               <div className="mb-4">
-                <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1">
+                <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1 flex items-center gap-2">
+                  {titulo === "💰 Débito / Conta" && <span className="text-amber-400">💰</span>}
+                  {titulo === "💳 Cartão de Crédito" && <span className="text-blue-400">💳</span>}
                   {titulo}
                 </h3>
                 <div
