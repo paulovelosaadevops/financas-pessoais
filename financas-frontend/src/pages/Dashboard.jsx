@@ -43,6 +43,13 @@ export default function Dashboard() {
   const [categorias, setCategorias] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [contas, setContas] = useState([]);
+  const [pagamentos, setPagamentos] = useState([
+    { id: 1, descricao: "Água", valor: 120, data: "2025-10-05", pago: true },
+    { id: 2, descricao: "Luz", valor: 180, data: "2025-10-10", pago: false },
+    { id: 3, descricao: "Internet", valor: 99.9, data: "2025-10-15", pago: false },
+    { id: 4, descricao: "Cartão Nubank", valor: 820, data: "2025-10-20", pago: false },
+    { id: 5, descricao: "Condomínio", valor: 350, data: "2025-10-25", pago: true },
+  ]);
 
   useEffect(() => {
     carregarResumo();
@@ -70,6 +77,12 @@ export default function Dashboard() {
       .get(`/dashboard?ano=${ano}&mes=${mes}`)
       .then((res) => setResumo(res.data))
       .catch((err) => console.error("Erro ao carregar resumo:", err));
+  };
+
+  const togglePago = (id) => {
+    setPagamentos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
+    );
   };
 
   const abrirModalFiltros = async () => {
@@ -181,16 +194,47 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* 🔹 Gráficos */}
-      <div className="md:grid md:grid-cols-2 gap-6 flex overflow-x-auto space-x-4 md:space-x-0 snap-x snap-mandatory md:overflow-visible pb-4">
-        <Section titulo="Despesas Variáveis por Categoria">
-          <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
-        </Section>
+      {/* 🔹 Gráficos + Checklist */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <div className="lg:col-span-2 space-y-6">
+          <Section titulo="Despesas Variáveis por Categoria">
+            <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
+          </Section>
 
-        <Section titulo="Despesas Variáveis por Responsável">
-          <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
-        </Section>
+          <Section titulo="Despesas Variáveis por Responsável">
+            <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
+          </Section>
+        </div>
 
+        {/* 🔹 Checklist lateral */}
+        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
+          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
+          <div className="flex-1 overflow-y-auto max-h-[380px] pr-1">
+            {pagamentos.map((item) => (
+              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={item.pago}
+                    onChange={() => togglePago(item.id)}
+                    className="form-checkbox text-green-500 rounded-md h-5 w-5"
+                  />
+                  <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
+                    {item.descricao}
+                  </span>
+                </label>
+                <div className="text-right">
+                  <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
+                  <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 🔹 Demais gráficos (responsivos) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Section titulo="Despesas Fixas por Categoria">
           <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
         </Section>
@@ -228,23 +272,15 @@ export default function Dashboard() {
                 {resumo.ultimosLancamentos.slice(0, 8).map((l, idx) => (
                   <tr
                     key={idx}
-                    className={`text-sm ${
-                      idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800/70"
-                    } hover:bg-gray-700/40 transition`}
+                    className={`text-sm ${idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800/70"} hover:bg-gray-700/40 transition`}
                   >
                     <td className="py-2 px-3 text-gray-300">{dayjs(l.data).format("DD/MM/YYYY")}</td>
-                    <td
-                      className={`py-2 px-3 font-semibold ${
-                        l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
+                    <td className={`py-2 px-3 font-semibold ${l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"}`}>
                       {l.tipo}
                     </td>
                     <td className="py-2 px-3 text-gray-300 truncate">{l.categoria?.nome || "-"}</td>
                     <td className="py-2 px-3 text-gray-300 truncate">{l.descricao || "-"}</td>
-                    <td className="py-2 px-3 text-right text-gray-100">
-                      {formatCurrency(l.valor)}
-                    </td>
+                    <td className="py-2 px-3 text-right text-gray-100">{formatCurrency(l.valor)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -323,26 +359,25 @@ function Section({ titulo, children }) {
 
 /* 🔹 Gráficos ordenados e responsivos */
 function PieBox({ data, colors, formatCurrency }) {
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
     : [];
   const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
 
   return (
-    <div className="flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
+    <div className="flex flex-col items-center w-full">
+      <ResponsiveContainer width="100%" height={280}>
         <PieChart>
           <Pie
             data={sortedData}
             cx="50%"
             cy="50%"
-            outerRadius={isMobile ? 70 : 100}
+            outerRadius={100}
             dataKey="total"
             nameKey="nome"
-            label={!isMobile ? ({ name, percent, value }) =>
+            label={({ name, percent, value }) =>
               `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
-            : false}
+            }
           >
             {sortedData.map((entry, i) => (
               <Cell key={i} fill={colors[i % colors.length]} />
@@ -352,7 +387,6 @@ function PieBox({ data, colors, formatCurrency }) {
         </PieChart>
       </ResponsiveContainer>
 
-      {/* 🔹 Legenda ordenada e visível */}
       {sortedData.length > 0 && (
         <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
           {sortedData.map((item, i) => {
@@ -378,13 +412,17 @@ function Select({ label, value, onChange, options }) {
   return (
     <div>
       <label className="block text-sm text-gray-400 mb-1">{label}</label>
-       <select value={value} onChange={onChange} className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg" >
-       {options.map((opt, idx) => (
-       <option key={idx} value={opt.value}>
-       {opt.label}
-       </option>
-       ))}
-       </select>
-       </div>
-       );
-       }
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+      >
+        {options.map((opt, idx) => (
+          <option key={idx} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
