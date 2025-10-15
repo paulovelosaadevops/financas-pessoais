@@ -14,7 +14,6 @@ import api from "../api";
 
 export default function Dashboard() {
 
-  // 🔹 Estados principais
   const [resumo, setResumo] = useState({
     totalReceitas: 0,
     totalDespesas: 0,
@@ -37,7 +36,6 @@ export default function Dashboard() {
   const [categorias, setCategorias] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
 
-  // 🔹 Carregamento inicial
   useEffect(() => {
     carregarCategorias();
   }, []);
@@ -47,7 +45,6 @@ export default function Dashboard() {
     carregarPagamentosFixos();
   }, [mes, ano, categorias]);
 
-  // 🔹 Funções auxiliares de carregamento
   const carregarCategorias = async () => {
     try {
       const res = await api.get("/categorias");
@@ -80,6 +77,7 @@ export default function Dashboard() {
           conta: f.conta || {},
           pago: false,
         }));
+
         setPagamentos(
           fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
         );
@@ -96,12 +94,35 @@ export default function Dashboard() {
     );
   };
 
-  // 🔹 Paletas de cores
+  // função para normalizar texto
+  const normalizar = (texto) =>
+    (texto || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase();
+
+  // 🔹 Separação por tipo
+  const fixasCredito = pagamentos.filter((p) => {
+    const categoria = normalizar(p.categoriaNome);
+    const conta = normalizar(p.conta?.nome);
+    return categoria.includes("CARTAO") || categoria.includes("CREDITO") ||
+           conta.includes("CARTAO") || conta.includes("CREDITO");
+  });
+
+  const fixasDebito = pagamentos.filter((p) => {
+    const categoria = normalizar(p.categoriaNome);
+    const conta = normalizar(p.conta?.nome);
+    return !categoria.includes("CARTAO") && !categoria.includes("CREDITO") &&
+           !conta.includes("CARTAO") && !conta.includes("CREDITO");
+  });
+
+  const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
+  const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
+
   const COLORS_RECEITAS = ["#34d399", "#10b981", "#059669", "#047857"];
   const COLORS_DESPESAS = ["#f87171", "#ef4444", "#dc2626", "#b91c1c"];
   const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"];
 
-  // 🔹 Utilitários
   const formatCurrency = (value) =>
     `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
@@ -110,43 +131,12 @@ export default function Dashboard() {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
-  // 🔹 Filtro de crédito / débito
-  const fixasCredito = pagamentos.filter((p) => {
-    const nomeCategoria = (p.categoriaNome || "").toUpperCase();
-    const nomeConta = (p.conta?.nome || "").toUpperCase();
-    return (
-      nomeCategoria.includes("CARTAO") ||
-      nomeCategoria.includes("CARTÃO") ||
-      nomeConta.includes("CREDITO") ||
-      nomeConta.includes("CRÉDITO")
-    );
-  });
-
-  const fixasDebito = pagamentos.filter((p) => {
-    const nomeCategoria = (p.categoriaNome || "").toUpperCase();
-    const nomeConta = (p.conta?.nome || "").toUpperCase();
-    return (
-      !nomeCategoria.includes("CARTAO") &&
-      !nomeCategoria.includes("CARTÃO") &&
-      !nomeConta.includes("CREDITO") &&
-      !nomeConta.includes("CRÉDITO")
-    );
-  });
-
-  const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
-  const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
-
-  // 🔹 Render principal
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8">
 
-      {/* ==========================
-          CABEÇALHO
-      ========================== */}
+      {/* Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-
-          {/* 🔸 Título e subtítulo */}
           <div className="text-center sm:text-left">
             <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight">
               Painel Financeiro
@@ -156,7 +146,6 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* 🔸 Filtros de mês e ano */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0 justify-center">
             <select
               value={mes}
@@ -178,9 +167,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* ==========================
-          CARDS DE RESUMO
-      ========================== */}
+      {/* Cards resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <Card cor="green" titulo="Receitas" valor={resumo.totalReceitas} Icon={ArrowUpCircleIcon} />
         <Card cor="red" titulo="Despesas Variáveis" valor={resumo.totalDespesas} Icon={ArrowDownCircleIcon} />
@@ -188,25 +175,8 @@ export default function Dashboard() {
         <Card cor="blue" titulo="Saldo" valor={resumo.saldo} Icon={CurrencyDollarIcon} />
       </div>
 
-      {/* ==========================
-          GRÁFICOS DE RECEITAS
-      ========================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <Section titulo="Receitas por Categoria">
-          <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-        </Section>
-
-        <Section titulo="Receitas por Responsável">
-          <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-        </Section>
-      </div>
-
-      {/* ==========================
-          DESPESAS VARIÁVEIS + CHECKLIST
-      ========================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-
-        {/* 🔸 Gráficos principais */}
+      {/* Gráficos e checklist lateral */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         <div className="lg:col-span-2 space-y-6">
           <Section titulo="Despesas Variáveis por Categoria">
             <PieBox data={resumo.categorias} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
@@ -217,7 +187,7 @@ export default function Dashboard() {
           </Section>
         </div>
 
-        {/* 🔸 Checklist lateral */}
+        {/* Checklist lateral */}
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
@@ -239,10 +209,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ==========================
-          DESPESAS FIXAS
-      ========================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      {/* Despesas fixas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         <Section titulo="Despesas Fixas por Categoria">
           <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
         </Section>
@@ -252,10 +220,8 @@ export default function Dashboard() {
         </Section>
       </div>
 
-      {/* ==========================
-          GRÁFICO DE EVOLUÇÃO MENSAL
-      ========================== */}
-      <Section titulo="📈 Evolução Mensal">
+      {/* Evolução Mensal */}
+      <Section titulo="📈 Evolução Mensal" className="mb-6">
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={resumo.mensal}>
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
@@ -270,10 +236,8 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </Section>
 
-      {/* ==========================
-          ÚLTIMOS LANÇAMENTOS
-      ========================== */}
-      <Section titulo="📅 Últimos Lançamentos do Mês">
+      {/* Últimos lançamentos */}
+      <Section titulo="📅 Últimos Lançamentos do Mês" className="mt-4">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-gray-300 border border-gray-700 rounded-lg overflow-hidden">
             <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
@@ -285,7 +249,6 @@ export default function Dashboard() {
                 <th className="px-4 py-2 text-right">Valor</th>
               </tr>
             </thead>
-
             <tbody>
               {resumo.ultimosLancamentos?.length ? (
                 resumo.ultimosLancamentos.map((l) => (
@@ -312,10 +275,7 @@ export default function Dashboard() {
   );
 }
 
-/* ==========================
-    COMPONENTES AUXILIARES
-========================== */
-
+/* ---------- Subcomponentes ---------- */
 function Card({ cor, titulo, valor, Icon }) {
   const corTexto = {
     green: "text-green-400",
@@ -337,9 +297,9 @@ function Card({ cor, titulo, valor, Icon }) {
   );
 }
 
-function Section({ titulo, children }) {
+function Section({ titulo, children, className = "" }) {
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 transition-all duration-300">
+    <div className={`bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 transition-all duration-300 ${className}`}>
       <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
       {children}
     </div>
@@ -350,7 +310,6 @@ function PieBox({ data, colors, formatCurrency }) {
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
     : [];
-
   return (
     <div className="flex flex-col items-center w-full">
       <ResponsiveContainer width="100%" height={280}>
@@ -379,7 +338,7 @@ function PieBox({ data, colors, formatCurrency }) {
 
 function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
   return (
-    <div className="mb-4">
+    <div className="mb-6">
       <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {titulo.includes("Débito") && <span className="text-amber-400">💰</span>}
