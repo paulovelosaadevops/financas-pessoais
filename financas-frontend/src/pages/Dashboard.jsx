@@ -82,10 +82,13 @@ export default function Dashboard() {
       const chave = `pagamentos-${ano}-${mes}`;
       const pagosMes = JSON.parse(localStorage.getItem(chave) || "[]");
 
+      // 🔹 Recria os pagamentos do zero, sem reusar o estado anterior
       const res = await api.get("/parametros/despesas-fixas");
+
       if (Array.isArray(res.data)) {
+        // 🔸 Aqui garantimos que cada mês é isolado:
         const fixas = res.data.map((f) => {
-          const pagoExistente = pagosMes.find((p) => p.id === f.id)?.pago ?? false;
+          const registroPagoMes = pagosMes.find((p) => p.id === f.id);
           return {
             id: f.id,
             descricao: f.descricao,
@@ -96,7 +99,7 @@ export default function Dashboard() {
               : dayjs().format("YYYY-MM-DD"),
             categoriaNome: f.categoria?.nome || "",
             conta: f.conta || {},
-            pago: pagoExistente,
+            pago: registroPagoMes ? registroPagoMes.pago : false, // só respeita se for do mês atual
           };
         });
 
