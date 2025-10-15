@@ -45,9 +45,23 @@ export default function Dashboard() {
   const [pagamentos, setPagamentos] = useState([]);
 
   useEffect(() => {
+    carregarCategorias();
+  }, []);
+
+  useEffect(() => {
     carregarResumo();
     carregarPagamentosFixos();
-  }, [mes, ano]);
+  }, [mes, ano, categorias]);
+
+  const carregarCategorias = async () => {
+    try {
+      const res = await api.get("/categorias");
+      setCategorias(res.data || []);
+    } catch (err) {
+      console.error("Erro ao carregar categorias:", err);
+      setCategorias([]);
+    }
+  };
 
   const carregarResumo = () => {
     setResumo({
@@ -77,19 +91,22 @@ export default function Dashboard() {
     try {
       const res = await api.get("/parametros/despesas-fixas");
       if (Array.isArray(res.data)) {
-        const fixas = res.data.map((f) => ({
-          id: f.id,
-          descricao: f.descricao,
-          valor: f.valor,
-          data: f.diaVencimento
-            ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
-            : dayjs().format("YYYY-MM-DD"),
-          categoria: f.categoria || {},
-          conta: f.conta || {},
-          pago: false,
-        }));
+        const fixas = res.data.map((f) => {
+          const categoriaNomeDireta = f.categoria?.nome;
+          const categoriaBuscada = categorias.find((c) => c.id === f.categoria?.id);
+          return {
+            id: f.id,
+            descricao: f.descricao,
+            valor: f.valor,
+            data: f.diaVencimento
+              ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
+              : dayjs().format("YYYY-MM-DD"),
+            categoriaNome: categoriaNomeDireta || categoriaBuscada?.nome || "",
+            conta: f.conta || {},
+            pago: false,
+          };
+        });
 
-        // 🔹 Ordena por dia do vencimento
         setPagamentos(
           fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
         );
@@ -234,18 +251,12 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
           {(() => {
-            // 🔹 Filtra corretamente usando a categoria "CARTÃO DE CRÉDITO"
-            const fixasCredito = pagamentos.filter((p) => {
-              const categoriaNome = p.categoria?.nome?.toLowerCase() || "";
-              const contaNome = p.conta?.nome?.toLowerCase() || "";
-              return categoriaNome.includes("cartão de crédito") || contaNome.includes("crédito");
-            });
-
-            const fixasDebito = pagamentos.filter((p) => {
-              const categoriaNome = p.categoria?.nome?.toLowerCase() || "";
-              const contaNome = p.conta?.nome?.toLowerCase() || "";
-              return !categoriaNome.includes("cartão de crédito") && !contaNome.includes("crédito");
-            });
+            const fixasCredito = pagamentos.filter((p) =>
+              p.categoriaNome?.toLowerCase().includes("cartão de crédito")
+            );
+            const fixasDebito = pagamentos.filter(
+              (p) => !p.categoriaNome?.toLowerCase().includes("cartão de crédito")
+            );
 
             const renderGrupo = (titulo, lista) => (
               <div className="mb-4">
@@ -338,9 +349,7 @@ function Card({ cor, titulo, valor, Icon }) {
     >
       <Icon className={`h-10 w-10 ${corTexto}`} />
       <div>
-        <p className="text-sm text-gray-400 uppercase tracking-wide">
-          {titulo}
-        </p>
+        <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
         <p className={`text-2xl font-semibold ${corTexto}`}>
           R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
         </p>
