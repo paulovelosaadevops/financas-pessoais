@@ -244,6 +244,26 @@ export default function Dashboard() {
           <Section titulo="Despesas Variáveis por Responsável">
             <PieBox data={resumo.responsaveis} colors={COLORS_DESPESAS} formatCurrency={formatCurrency} />
           </Section>
+
+          <Section titulo="Receitas por Categoria">
+            <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+          </Section>
+
+          <Section titulo="Receitas por Responsável">
+            <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+          </Section>
+
+          <Section titulo="Receitas por Banco">
+            <PieBox data={resumo.receitasBancos} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
+          </Section>
+
+          <Section titulo="Despesas Fixas por Categoria">
+            <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
+          </Section>
+
+          <Section titulo="Despesas Fixas por Responsável">
+            <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
+          </Section>
         </div>
 
         {/* 🔹 Checklist lateral */}
@@ -251,7 +271,6 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
           {(() => {
-            // 🔹 Normaliza texto (remove acentos e força maiúsculas)
             const normalize = (str) =>
               (str || "")
                 .normalize("NFD")
@@ -349,6 +368,42 @@ export default function Dashboard() {
           })()}
         </div>
       </div>
+
+      {/* 🔹 Últimos Lançamentos */}
+      <Section titulo="Últimos Lançamentos do Mês">
+        <div className="overflow-x-auto">
+          {resumo.ultimosLancamentos.length === 0 ? (
+            <p className="text-gray-500 italic">Nenhum lançamento encontrado para este mês.</p>
+          ) : (
+            <table className="min-w-full text-sm text-left border-collapse">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-700">
+                  <th className="p-2">Data</th>
+                  <th className="p-2">Descrição</th>
+                  <th className="p-2">Categoria</th>
+                  <th className="p-2">Responsável</th>
+                  <th className="p-2 text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resumo.ultimosLancamentos.map((l, i) => (
+                  <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
+                    <td className="p-2 text-gray-400">{dayjs(l.data).format("DD/MM")}</td>
+                    <td className="p-2">{l.descricao}</td>
+                    <td className="p-2 text-gray-400">{l.categoria}</td>
+                    <td className="p-2 text-gray-400">{l.responsavel}</td>
+                    <td className={`p-2 text-right font-medium ${
+                      l.tipo === "RECEITA" ? "text-green-400" : "text-red-400"
+                    }`}>
+                      {formatCurrency(l.valor)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Section>
     </div>
   );
 }
@@ -377,53 +432,57 @@ function Card({ cor, titulo, valor, Icon }) {
       <div>
         <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
         <p className={`text-2xl font-semibold ${corTexto}`}>
-          R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-        </p>
-      </div>
-    </div>
-  );
-}
+          R$ {Number(valor || 0            ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                       </p>
+                                     </div>
+                                   </div>
+                                 );
+                               }
 
-function Section({ titulo, children }) {
-  return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
-      <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
-      {children}
-    </div>
-  );
-}
+                               function Section({ titulo, children }) {
+                                 return (
+                                   <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
+                                     <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
+                                     {children}
+                                   </div>
+                                 );
+                               }
 
-function PieBox({ data, colors, formatCurrency }) {
-  const sortedData = Array.isArray(data)
-    ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
-    : [];
-  const totalGeral = sortedData.reduce(
-    (sum, item) => sum + (item.total || 0),
-    0
-  );
+                               function PieBox({ data, colors, formatCurrency }) {
+                                 const sortedData = Array.isArray(data)
+                                   ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
+                                   : [];
+                                 const totalGeral = sortedData.reduce(
+                                   (sum, item) => sum + (item.total || 0),
+                                   0
+                                 );
 
-  return (
-    <div className="flex flex-col items-center w-full">
-      <ResponsiveContainer width="100%" height={280}>
-        <PieChart>
-          <Pie
-            data={sortedData}
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            dataKey="total"
-            nameKey="nome"
-            label={({ name, percent, value }) =>
-              `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
-            }
-          >
-            {sortedData.map((entry, i) => (
-              <Cell key={i} fill={colors[i % colors.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(v) => formatCurrency(v)} />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
+                                 return (
+                                   <div className="flex flex-col items-center w-full">
+                                     <ResponsiveContainer width="100%" height={280}>
+                                       <PieChart>
+                                         <Pie
+                                           data={sortedData}
+                                           cx="50%"
+                                           cy="50%"
+                                           outerRadius={100}
+                                           dataKey="total"
+                                           nameKey="nome"
+                                           label={({ name, percent, value }) =>
+                                             `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
+                                           }
+                                         >
+                                           {sortedData.map((entry, i) => (
+                                             <Cell key={i} fill={colors[i % colors.length]} />
+                                           ))}
+                                         </Pie>
+                                         <Tooltip formatter={(v) => formatCurrency(v)} />
+                                       </PieChart>
+                                     </ResponsiveContainer>
+                                     <p className="text-xs text-gray-400 mt-2">
+                                       Total geral: {formatCurrency(totalGeral)}
+                                     </p>
+                                   </div>
+                                 );
+                               }
+
