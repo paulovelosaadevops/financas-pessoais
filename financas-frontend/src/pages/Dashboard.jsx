@@ -43,11 +43,16 @@ export default function Dashboard() {
   const [categorias, setCategorias] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [contas, setContas] = useState([]);
-  const [pagamentos, setPagamentos] = useState([]);
+  const [pagamentos, setPagamentos] = useState([
+    { id: 1, descricao: "Água", valor: 120, data: "2025-10-05", pago: true },
+    { id: 2, descricao: "Luz", valor: 180, data: "2025-10-10", pago: false },
+    { id: 3, descricao: "Internet", valor: 99.9, data: "2025-10-15", pago: false },
+    { id: 4, descricao: "Cartão Nubank", valor: 820, data: "2025-10-20", pago: false },
+    { id: 5, descricao: "Condomínio", valor: 350, data: "2025-10-25", pago: true },
+  ]);
 
   useEffect(() => {
     carregarResumo();
-    carregarPagamentosFixos();
   }, [mes, ano]);
 
   const carregarResumo = () => {
@@ -74,24 +79,10 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
-  const carregarPagamentosFixos = () => {
-    api
-      .get(`/lancamentos/fixas?ano=${ano}&mes=${mes}`)
-      .then((res) => setPagamentos(res.data || []))
-      .catch((err) => console.error("Erro ao carregar pagamentos fixos:", err));
-  };
-
-  const togglePago = async (id, pagoAtual) => {
-    try {
-      const novoStatus = !pagoAtual;
-      await api.patch(`/lancamentos/${id}`, { pago: novoStatus });
-      setPagamentos((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, pago: novoStatus } : p))
-      );
-    } catch (err) {
-      console.error("Erro ao atualizar status de pagamento:", err);
-      alert("Falha ao atualizar o status do pagamento.");
-    }
+  const togglePago = (id) => {
+    setPagamentos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
+    );
   };
 
   const abrirModalFiltros = async () => {
@@ -217,36 +208,32 @@ export default function Dashboard() {
 
         {/* 🔹 Checklist lateral */}
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
-          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos Fixos</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
           <div className="flex-1 overflow-y-auto max-h-[380px] pr-1">
-            {pagamentos.length > 0 ? (
-              pagamentos.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={item.pago}
-                      onChange={() => togglePago(item.id, item.pago)}
-                      className="form-checkbox text-green-500 rounded-md h-5 w-5"
-                    />
-                    <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
-                      {item.descricao}
-                    </span>
-                  </label>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
-                    <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
-                  </div>
+            {pagamentos.map((item) => (
+              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={item.pago}
+                    onChange={() => togglePago(item.id)}
+                    className="form-checkbox text-green-500 rounded-md h-5 w-5"
+                  />
+                  <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
+                    {item.descricao}
+                  </span>
+                </label>
+                <div className="text-right">
+                  <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
+                  <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-400 text-sm italic">Nenhuma despesa fixa encontrada.</p>
-            )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* 🔹 Demais gráficos */}
+      {/* 🔹 Demais gráficos (responsivos) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Section titulo="Despesas Fixas por Categoria">
           <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
@@ -354,65 +341,88 @@ function Card({ cor, titulo, valor, Icon }) {
       <div>
         <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
         <p className={`text-2xl font-semibold ${corTexto}`}>
-          R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2
-})}
-</p>
-</div>
-</div>
-);
+          R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function Section({ titulo, children }) {
-return (
-<div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
-<h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
-{children}
-</div>
-);
+  return (
+    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg hover:shadow-amber-400/10 rounded-2xl p-6 transition-all duration-300">
+      <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
+      {children}
+    </div>
+  );
 }
 
+/* 🔹 Gráficos ordenados e responsivos */
 function PieBox({ data, colors, formatCurrency }) {
-const sortedData = Array.isArray(data)
-? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
-: [];
-const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
+  const sortedData = Array.isArray(data)
+    ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
+    : [];
+  const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
 
-return (
-<div className="flex flex-col items-center w-full">
-<ResponsiveContainer width="100%" height={280}>
-<PieChart>
-<Pie
-data={sortedData}
-cx="50%"
-cy="50%"
-outerRadius={100}
-dataKey="total"
-nameKey="nome"
-label={({ name, percent, value }) =>
-${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)
+  return (
+    <div className="flex flex-col items-center w-full">
+      <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+          <Pie
+            data={sortedData}
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            dataKey="total"
+            nameKey="nome"
+            label={({ name, percent, value }) =>
+              `${name} - ${formatCurrency(value)} (${(percent * 100).toFixed(1)}%)`
+            }
+          >
+            {sortedData.map((entry, i) => (
+              <Cell key={i} fill={colors[i % colors.length]} />
+            ))}
+          </Pie>
+          <Tooltip formatter={(v) => formatCurrency(v)} />
+        </PieChart>
+      </ResponsiveContainer>
+
+      {sortedData.length > 0 && (
+        <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
+          {sortedData.map((item, i) => {
+            const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
+            return (
+              <li key={i} className="flex items-center gap-2 justify-between">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+                  <span className="truncate">{item.nome}</span>
+                </div>
+                <span>{percent}%</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 }
->
-{sortedData.map((entry, i) => (
-<Cell key={i} fill={colors[i % colors.length]} />
-))}
-</Pie>
-<Tooltip formatter={(v) => formatCurrency(v)} />
-</PieChart>
-</ResponsiveContainer>
-  {sortedData.length > 0 && (
-    <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
-      {sortedData.map((item, i) => {
-        const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
-        return (
-          <li key={i} className="flex items-center gap-2 justify-between">
-            <div className="flex items-center gap-2 truncate">
-              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
-              <span className="truncate">{item.nome}</span>
-            </div>
-            <span>{percent}%</span>
-          </li>
-        );
-      })}
-    </ul>
-  )}
-</div>
+
+/* 🔹 Select usado no modal */
+function Select({ label, value, onChange, options }) {
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
+      >
+        {options.map((opt, idx) => (
+          <option key={idx} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
