@@ -3,6 +3,7 @@ package com.financas.pessoais.financasweb.controller;
 import com.financas.pessoais.financasweb.dto.DespesaFixaDTO;
 import com.financas.pessoais.financasweb.model.DespesaFixa;
 import com.financas.pessoais.financasweb.repository.DespesaFixaRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,31 +22,39 @@ public class DespesaFixaController {
 
     // 🔹 LISTAR TODAS
     @GetMapping
-    public List<DespesaFixaDTO> listar() {
-        return repository.findAll()
+    public ResponseEntity<List<DespesaFixaDTO>> listar() {
+        List<DespesaFixaDTO> lista = repository.findAll()
                 .stream()
                 .map(DespesaFixaDTO::new)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(lista);
     }
 
     // 🔹 CRIAR
     @PostMapping
-    public DespesaFixaDTO criar(@RequestBody DespesaFixa despesaFixa) {
+    public ResponseEntity<DespesaFixaDTO> criar(@RequestBody DespesaFixa despesaFixa) {
+        if (despesaFixa.getTipoPagamento() == null || despesaFixa.getTipoPagamento().isBlank()) {
+            despesaFixa.setTipoPagamento("DEBITO"); // valor padrão
+        }
         DespesaFixa salvo = repository.save(despesaFixa);
-        return new DespesaFixaDTO(salvo);
+        return ResponseEntity.ok(new DespesaFixaDTO(salvo));
     }
 
     // 🔹 ATUALIZAR
     @PutMapping("/{id}")
-    public DespesaFixaDTO atualizar(@PathVariable Long id, @RequestBody DespesaFixa despesaFixa) {
+    public ResponseEntity<DespesaFixaDTO> atualizar(@PathVariable Long id, @RequestBody DespesaFixa despesaFixa) {
         despesaFixa.setId(id);
+        if (despesaFixa.getTipoPagamento() == null || despesaFixa.getTipoPagamento().isBlank()) {
+            despesaFixa.setTipoPagamento("DEBITO"); // segurança extra
+        }
         DespesaFixa salvo = repository.save(despesaFixa);
-        return new DespesaFixaDTO(salvo);
+        return ResponseEntity.ok(new DespesaFixaDTO(salvo));
     }
 
     // 🔹 DELETAR
     @DeleteMapping("/{id}")
-    public void deletar(@PathVariable Long id) {
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
         repository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

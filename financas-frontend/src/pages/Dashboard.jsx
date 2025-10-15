@@ -70,6 +70,7 @@ export default function Dashboard() {
           id: f.id,
           descricao: f.descricao,
           valor: f.valor,
+          tipoPagamento: f.tipoPagamento || "DEBITO",
           data: f.diaVencimento
             ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
             : dayjs().format("YYYY-MM-DD"),
@@ -94,27 +95,9 @@ export default function Dashboard() {
     );
   };
 
-  // função para normalizar texto
-  const normalizar = (texto) =>
-    (texto || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toUpperCase();
-
-  // 🔹 Separação por tipo
-  const fixasCredito = pagamentos.filter((p) => {
-    const categoria = normalizar(p.categoriaNome);
-    const conta = normalizar(p.conta?.nome);
-    return categoria.includes("CARTAO") || categoria.includes("CREDITO") ||
-           conta.includes("CARTAO") || conta.includes("CREDITO");
-  });
-
-  const fixasDebito = pagamentos.filter((p) => {
-    const categoria = normalizar(p.categoriaNome);
-    const conta = normalizar(p.conta?.nome);
-    return !categoria.includes("CARTAO") && !categoria.includes("CREDITO") &&
-           !conta.includes("CARTAO") && !conta.includes("CREDITO");
-  });
+  // 🔹 Agora usamos o tipoPagamento direto do backend
+  const fixasCredito = pagamentos.filter((p) => p.tipoPagamento === "CREDITO");
+  const fixasDebito = pagamentos.filter((p) => p.tipoPagamento === "DEBITO");
 
   const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
   const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);

@@ -14,7 +14,7 @@ public class DespesaFixaDTO {
     private Integer diaVencimento;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate fimRecorrencia;   // fim da vigência/recorrência
+    private LocalDate fimRecorrencia;
 
     private Long contaId;
     private String contaNome;
@@ -22,6 +22,8 @@ public class DespesaFixaDTO {
     private String responsavelNome;
     private Long categoriaId;
     private String categoriaNome;
+
+    private String tipoPagamento; // 🔹 NOVO CAMPO — "DEBITO" ou "CREDITO"
 
     public DespesaFixaDTO() {}
 
@@ -37,6 +39,7 @@ public class DespesaFixaDTO {
         this.responsavelNome = d.getResponsavel() != null ? d.getResponsavel().getNome() : null;
         this.categoriaId = d.getCategoria() != null ? d.getCategoria().getId() : null;
         this.categoriaNome = d.getCategoria() != null ? d.getCategoria().getNome() : null;
+        this.tipoPagamento = d.getTipoPagamento() != null ? d.getTipoPagamento() : "DEBITO"; // padrão seguro
     }
 
     public Long getId() { return id; }
@@ -50,6 +53,7 @@ public class DespesaFixaDTO {
     public String getResponsavelNome() { return responsavelNome; }
     public Long getCategoriaId() { return categoriaId; }
     public String getCategoriaNome() { return categoriaNome; }
+    public String getTipoPagamento() { return tipoPagamento; }
 
     public void setId(Long id) { this.id = id; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
@@ -62,4 +66,5 @@ public class DespesaFixaDTO {
     public void setResponsavelNome(String responsavelNome) { this.responsavelNome = responsavelNome; }
     public void setCategoriaId(Long categoriaId) { this.categoriaId = categoriaId; }
     public void setCategoriaNome(String categoriaNome) { this.categoriaNome = categoriaNome; }
+    public void setTipoPagamento(String tipoPagamento) { this.tipoPagamento = tipoPagamento; }
 }
