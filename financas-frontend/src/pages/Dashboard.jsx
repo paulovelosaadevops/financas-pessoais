@@ -224,35 +224,78 @@ export default function Dashboard() {
           </Section>
         </div>
 
-        {/* 🔹 Checklist lateral */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
-          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
-          <div className="flex-1 overflow-y-visible max-h-none space-y-1">
-            {pagamentos.length === 0 ? (
-              <p className="text-gray-400 text-sm italic">Nenhum pagamento fixo encontrado.</p>
-            ) : (
-              pagamentos.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={item.pago}
-                      onChange={() => togglePago(item.id)}
-                      className="form-checkbox text-green-500 rounded-md h-5 w-5"
-                    />
-                    <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
-                      {item.descricao}
-                    </span>
-                  </label>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
-                    <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      {/* 🔹 Checklist lateral */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
+        <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
+
+        {/* 🔹 Agrupar por tipo de conta */}
+        {(() => {
+          const fixasCredito = pagamentos.filter(
+            (p) =>
+              p.conta?.nome?.toLowerCase().includes("crédito") ||
+              p.conta?.tipo?.toLowerCase().includes("crédito")
+          );
+          const fixasDebito = pagamentos.filter(
+            (p) =>
+              !p.conta?.nome?.toLowerCase().includes("crédito") &&
+              !p.conta?.tipo?.toLowerCase().includes("crédito")
+          );
+
+          const renderGrupo = (titulo, lista) => (
+            <div className="mb-4">
+              <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1">
+                {titulo}
+              </h3>
+              <div
+                className={`space-y-1 ${
+                  lista.length > 8 ? "overflow-y-auto max-h-[360px]" : "overflow-y-visible"
+                }`}
+              >
+                {lista.length === 0 ? (
+                  <p className="text-gray-500 text-xs italic">Nenhum lançamento encontrado.</p>
+                ) : (
+                  lista.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
+                    >
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={item.pago}
+                          onChange={() => togglePago(item.id)}
+                          className="form-checkbox text-green-500 rounded-md h-5 w-5"
+                        />
+                        <span
+                          className={`truncate ${
+                            item.pago ? "text-green-400 line-through" : "text-gray-200"
+                          }`}
+                        >
+                          {item.descricao}
+                        </span>
+                      </label>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-400">
+                          {dayjs(item.data).format("DD/MM")}
+                        </p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(item.valor)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+
+          return (
+            <>
+              {renderGrupo("💰 Débito / Conta", fixasDebito)}
+              {renderGrupo("💳 Cartão de Crédito", fixasCredito)}
+            </>
+          );
+        })()}
       </div>
 
       {/* 🔹 Demais gráficos (responsivos) */}
