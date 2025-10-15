@@ -12,13 +12,13 @@ import java.util.List;
 
 public interface DespesaFixaRepository extends JpaRepository<DespesaFixa, Long> {
 
-    // 🔹 Total geral de despesas fixas ativas no período
     @Query("""
-        SELECT COALESCE(SUM(d.valor), 0)
-          FROM DespesaFixa d
-         WHERE (d.fimRecorrencia IS NULL OR d.fimRecorrencia >= :inicio)
-      """)
-    BigDecimal totalDespesasFixasAtivas(@Param("inicio") LocalDate inicio);
+    SELECT COALESCE(SUM(d.valor), 0)
+    FROM DespesaFixa d
+    WHERE d.fimRecorrencia IS NULL OR d.fimRecorrencia >= :inicio
+""")
+    BigDecimal totalDespesasFixasAtivas(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
 
     // 🔹 Total de despesas fixas filtradas por tipoPagamento
     @Query("""
