@@ -251,29 +251,31 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
           {(() => {
+            // 🔹 Normaliza texto (remove acentos e força maiúsculas)
+            const normalize = (str) =>
+              (str || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toUpperCase();
+
             const fixasCredito = pagamentos.filter((p) => {
-              const nomeCategoria = (p.categoriaNome || "").toUpperCase();
-              const nomeConta = (p.conta?.nome || "").toUpperCase();
+              const nomeCategoria = normalize(p.categoriaNome);
+              const nomeConta = normalize(p.conta?.nome);
               return (
-                nomeCategoria.includes("CARTÃO DE CRÉDITO") ||
                 nomeCategoria.includes("CARTAO DE CREDITO") ||
-                nomeConta.includes("CRÉDITO") ||
                 nomeConta.includes("CREDITO")
               );
             });
 
             const fixasDebito = pagamentos.filter((p) => {
-              const nomeCategoria = (p.categoriaNome || "").toUpperCase();
-              const nomeConta = (p.conta?.nome || "").toUpperCase();
+              const nomeCategoria = normalize(p.categoriaNome);
+              const nomeConta = normalize(p.conta?.nome);
               return (
-                !nomeCategoria.includes("CARTÃO DE CRÉDITO") &&
                 !nomeCategoria.includes("CARTAO DE CREDITO") &&
-                !nomeConta.includes("CRÉDITO") &&
                 !nomeConta.includes("CREDITO")
               );
             });
 
-            // 💰 Totais formatados
             const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
             const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
 
