@@ -226,7 +226,7 @@ export default function Dashboard() {
         {/* 🔹 Checklist lateral */}
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
-          <div className="flex-1 overflow-y-auto max-h-[380px] pr-1">
+          <div className="flex-1 overflow-y-visible max-h-none space-y-1">
             {pagamentos.length === 0 ? (
               <p className="text-gray-400 text-sm italic">Nenhum pagamento fixo encontrado.</p>
             ) : (
