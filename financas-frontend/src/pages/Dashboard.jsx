@@ -97,9 +97,10 @@ export default function Dashboard() {
     }
   };
 
+
   const togglePago = (id) => {
-    setPagamentos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
+    setPagamentos(
+      fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
     );
   };
 
