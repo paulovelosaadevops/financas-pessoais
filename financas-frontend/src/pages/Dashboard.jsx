@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from "recharts";
 import {
   ArrowUpCircleIcon,
@@ -85,11 +84,11 @@ export default function Dashboard() {
           data: f.diaVencimento
             ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
             : dayjs().format("YYYY-MM-DD"),
-          conta: f.conta || {}, // importante: para detectar cartão depois
+          conta: f.conta || {},
           pago: false,
         }));
 
-        // 🔹 Ordena pelo dia do vencimento (menor primeiro)
+        // 🔹 Ordena por dia do vencimento
         setPagamentos(
           fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
         );
@@ -103,8 +102,8 @@ export default function Dashboard() {
   };
 
   const togglePago = (id) => {
-    setPagamentos(
-      fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
+    setPagamentos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
     );
   };
 
@@ -168,6 +167,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8">
+
       {/* 🔹 Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
@@ -228,97 +228,84 @@ export default function Dashboard() {
           </Section>
         </div>
 
-      {/* 🔹 Checklist lateral */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
-        <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
+        {/* 🔹 Checklist lateral */}
+        <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
+          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
-        {/* 🔹 Agrupar por tipo de conta */}
-        {(() => {
-          const fixasCredito = pagamentos.filter(
-            (p) =>
-              p.conta?.nome?.toLowerCase().includes("crédito") ||
-              p.conta?.tipo?.toLowerCase().includes("crédito")
-          );
-          const fixasDebito = pagamentos.filter(
-            (p) =>
-              !p.conta?.nome?.toLowerCase().includes("crédito") &&
-              !p.conta?.tipo?.toLowerCase().includes("crédito")
-          );
+          {(() => {
+            const fixasCredito = pagamentos.filter(
+              (p) =>
+                p.conta?.nome?.toLowerCase().includes("crédito") ||
+                p.conta?.tipo?.toLowerCase().includes("crédito")
+            );
+            const fixasDebito = pagamentos.filter(
+              (p) =>
+                !p.conta?.nome?.toLowerCase().includes("crédito") &&
+                !p.conta?.tipo?.toLowerCase().includes("crédito")
+            );
 
-          const renderGrupo = (titulo, lista) => (
-            <div className="mb-4">
-              <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1">
-                {titulo}
-              </h3>
-              <div
-                className={`space-y-1 ${
-                  lista.length > 8 ? "overflow-y-auto max-h-[360px]" : "overflow-y-visible"
-                }`}
-              >
-                {lista.length === 0 ? (
-                  <p className="text-gray-500 text-xs italic">Nenhum lançamento encontrado.</p>
-                ) : (
-                  lista.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
-                    >
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={item.pago}
-                          onChange={() => togglePago(item.id)}
-                          className="form-checkbox text-green-500 rounded-md h-5 w-5"
-                        />
-                        <span
-                          className={`truncate ${
-                            item.pago ? "text-green-400 line-through" : "text-gray-200"
-                          }`}
-                        >
-                          {item.descricao}
-                        </span>
-                      </label>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400">
-                          {dayjs(item.data).format("DD/MM")}
-                        </p>
-                        <p className="text-sm font-medium">
-                          {formatCurrency(item.valor)}
-                        </p>
+            const renderGrupo = (titulo, lista) => (
+              <div className="mb-4">
+                <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1">
+                  {titulo}
+                </h3>
+                <div
+                  className={`space-y-1 ${
+                    lista.length > 8
+                      ? "overflow-y-auto max-h-[360px]"
+                      : "overflow-y-visible"
+                  }`}
+                >
+                  {lista.length === 0 ? (
+                    <p className="text-gray-500 text-xs italic">
+                      Nenhum lançamento encontrado.
+                    </p>
+                  ) : (
+                    lista.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
+                      >
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={item.pago}
+                            onChange={() => togglePago(item.id)}
+                            className="form-checkbox text-green-500 rounded-md h-5 w-5"
+                          />
+                          <span
+                            className={`truncate ${
+                              item.pago
+                                ? "text-green-400 line-through"
+                                : "text-gray-200"
+                            }`}
+                          >
+                            {item.descricao}
+                          </span>
+                        </label>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-400">
+                            {dayjs(item.data).format("DD/MM")}
+                          </p>
+                          <p className="text-sm font-medium">
+                            {formatCurrency(item.valor)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          );
+            );
 
-          return (
-            <>
-              {renderGrupo("💰 Débito / Conta", fixasDebito)}
-              {renderGrupo("💳 Cartão de Crédito", fixasCredito)}
-            </>
-          );
-        })()}
-      </div>
-
-      {/* 🔹 Demais gráficos (responsivos) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Section titulo="Despesas Fixas por Categoria">
-          <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
-        </Section>
-
-        <Section titulo="Despesas Fixas por Responsável">
-          <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
-        </Section>
-
-        <Section titulo="Receitas por Categoria">
-          <PieBox data={resumo.receitasCategorias} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-        </Section>
-
-        <Section titulo="Receitas por Responsável">
-          <PieBox data={resumo.receitasResponsaveis} colors={COLORS_RECEITAS} formatCurrency={formatCurrency} />
-        </Section>
+            return (
+              <>
+                {renderGrupo("💰 Débito / Conta", fixasDebito)}
+                {renderGrupo("💳 Cartão de Crédito", fixasCredito)}
+              </>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
@@ -341,10 +328,14 @@ function Card({ cor, titulo, valor, Icon }) {
   }[cor];
 
   return (
-    <div className={`bg-gradient-to-br from-gray-900 to-gray-950 border ${corBorda} shadow-lg rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300`}>
+    <div
+      className={`bg-gradient-to-br from-gray-900 to-gray-950 border ${corBorda} shadow-lg rounded-2xl p-6 flex items-center space-x-4 transition-all duration-300`}
+    >
       <Icon className={`h-10 w-10 ${corTexto}`} />
       <div>
-        <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
+        <p className="text-sm text-gray-400 uppercase tracking-wide">
+          {titulo}
+        </p>
         <p className={`text-2xl font-semibold ${corTexto}`}>
           R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
         </p>
@@ -362,12 +353,14 @@ function Section({ titulo, children }) {
   );
 }
 
-/* 🔹 Gráficos ordenados e responsivos */
 function PieBox({ data, colors, formatCurrency }) {
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
     : [];
-  const totalGeral = sortedData.reduce((sum, item) => sum + (item.total || 0), 0);
+  const totalGeral = sortedData.reduce(
+    (sum, item) => sum + (item.total || 0),
+    0
+  );
 
   return (
     <div className="flex flex-col items-center w-full">
