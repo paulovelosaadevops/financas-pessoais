@@ -36,23 +36,18 @@ export default function Dashboard() {
   const [categorias, setCategorias] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
 
-  // 🔹 Carrega pagamentos específicos do mês/ano corrente
+  // 🔹 Carrega pagamentos do mês/ano atual do localStorage
   useEffect(() => {
     const chave = `pagamentos-${ano}-${mes}`;
     const salvos = localStorage.getItem(chave);
-    if (salvos) {
-      setPagamentos(JSON.parse(salvos));
-    } else {
-      setPagamentos([]);
-    }
+    if (salvos) setPagamentos(JSON.parse(salvos));
+    else setPagamentos([]); // zera se ainda não há nada salvo
   }, [mes, ano]);
 
-  // 🔹 Salva pagamentos do mês/ano corrente
+  // 🔹 Salva automaticamente toda vez que houver mudança no estado
   useEffect(() => {
-    if (pagamentos.length > 0) {
-      const chave = `pagamentos-${ano}-${mes}`;
-      localStorage.setItem(chave, JSON.stringify(pagamentos));
-    }
+    const chave = `pagamentos-${ano}-${mes}`;
+    localStorage.setItem(chave, JSON.stringify(pagamentos));
   }, [pagamentos, mes, ano]);
 
   useEffect(() => {
@@ -81,22 +76,29 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
+  // 🔹 Corrigido: carrega fixas e aplica apenas os pagos do mês atual
   const carregarPagamentosFixos = async () => {
     try {
+      const chave = `pagamentos-${ano}-${mes}`;
+      const pagosMes = JSON.parse(localStorage.getItem(chave) || "[]");
+
       const res = await api.get("/parametros/despesas-fixas");
       if (Array.isArray(res.data)) {
-        const fixas = res.data.map((f) => ({
-          id: f.id,
-          descricao: f.descricao,
-          valor: f.valor,
-          tipoPagamento: f.tipoPagamento || "DEBITO",
-          data: f.diaVencimento
-            ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
-            : dayjs().format("YYYY-MM-DD"),
-          categoriaNome: f.categoria?.nome || "",
-          conta: f.conta || {},
-          pago: pagamentos.find((p) => p.id === f.id)?.pago ?? false, // mantém estado do mês corrente
-        }));
+        const fixas = res.data.map((f) => {
+          const pagoExistente = pagosMes.find((p) => p.id === f.id)?.pago ?? false;
+          return {
+            id: f.id,
+            descricao: f.descricao,
+            valor: f.valor,
+            tipoPagamento: f.tipoPagamento || "DEBITO",
+            data: f.diaVencimento
+              ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
+              : dayjs().format("YYYY-MM-DD"),
+            categoriaNome: f.categoria?.nome || "",
+            conta: f.conta || {},
+            pago: pagoExistente,
+          };
+        });
 
         setPagamentos(
           fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
@@ -114,6 +116,7 @@ export default function Dashboard() {
     );
   };
 
+  // 🔹 Separação dos tipos
   const fixasCredito = pagamentos.filter((p) => p.tipoPagamento === "CREDITO");
   const fixasDebito = pagamentos.filter((p) => p.tipoPagamento === "DEBITO");
 
