@@ -43,16 +43,11 @@ export default function Dashboard() {
   const [categorias, setCategorias] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
   const [contas, setContas] = useState([]);
-  const [pagamentos, setPagamentos] = useState([
-    { id: 1, descricao: "Água", valor: 120, data: "2025-10-05", pago: true },
-    { id: 2, descricao: "Luz", valor: 180, data: "2025-10-10", pago: false },
-    { id: 3, descricao: "Internet", valor: 99.9, data: "2025-10-15", pago: false },
-    { id: 4, descricao: "Cartão Nubank", valor: 820, data: "2025-10-20", pago: false },
-    { id: 5, descricao: "Condomínio", valor: 350, data: "2025-10-25", pago: true },
-  ]);
+  const [pagamentos, setPagamentos] = useState([]);
 
   useEffect(() => {
     carregarResumo();
+    carregarPagamentosFixos();
   }, [mes, ano]);
 
   const carregarResumo = () => {
@@ -79,10 +74,24 @@ export default function Dashboard() {
       .catch((err) => console.error("Erro ao carregar resumo:", err));
   };
 
-  const togglePago = (id) => {
-    setPagamentos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
-    );
+  const carregarPagamentosFixos = () => {
+    api
+      .get(`/lancamentos/fixas?ano=${ano}&mes=${mes}`)
+      .then((res) => setPagamentos(res.data || []))
+      .catch((err) => console.error("Erro ao carregar despesas fixas:", err));
+  };
+
+  const togglePago = async (id, pagoAtual) => {
+    try {
+      const novoStatus = !pagoAtual;
+      await api.patch(`/lancamentos/${id}`, { pago: novoStatus });
+      setPagamentos((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, pago: novoStatus } : p))
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar status de pagamento:", error);
+      alert("Falha ao atualizar o status de pagamento.");
+    }
   };
 
   const abrirModalFiltros = async () => {
@@ -145,7 +154,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8">
-
       {/* 🔹 Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
@@ -210,25 +218,29 @@ export default function Dashboard() {
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col">
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
           <div className="flex-1 overflow-y-auto max-h-[380px] pr-1">
-            {pagamentos.map((item) => (
-              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={item.pago}
-                    onChange={() => togglePago(item.id)}
-                    className="form-checkbox text-green-500 rounded-md h-5 w-5"
-                  />
-                  <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
-                    {item.descricao}
-                  </span>
-                </label>
-                <div className="text-right">
-                  <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
-                  <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
+            {pagamentos.length > 0 ? (
+              pagamentos.map((item) => (
+                <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={item.pago}
+                      onChange={() => togglePago(item.id, item.pago)}
+                      className="form-checkbox text-green-500 rounded-md h-5 w-5"
+                    />
+                    <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
+                      {item.descricao}
+                    </span>
+                  </label>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
+                    <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-400 text-sm italic">Nenhum pagamento fixo encontrado.</p>
+            )}
           </div>
         </div>
       </div>
@@ -255,7 +267,6 @@ export default function Dashboard() {
       {/* 🔹 Últimos Lançamentos */}
       <div className="mt-10 bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-100">Últimos Lançamentos</h2>
-
         {resumo.ultimosLancamentos && resumo.ultimosLancamentos.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
@@ -290,36 +301,10 @@ export default function Dashboard() {
           <p className="text-gray-400 text-sm italic">Nenhum lançamento encontrado neste período.</p>
         )}
       </div>
-
-      {/* 🔹 Modal Exportar Relatório */}
-      {showFiltros && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-[90%] max-w-md">
-            <h2 className="text-xl font-semibold text-gray-100 mb-4 text-center">
-              Exportar Relatório
-            </h2>
-            <div className="space-y-3">
-              <Select label="Tipo" value={filtros.tipo} onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })} options={[
-                { label: "Todos", value: "" },
-                { label: "Receita", value: "RECEITA" },
-                { label: "Despesa", value: "DESPESA" },
-              ]} />
-              <Select label="Categoria" value={filtros.categoriaId} onChange={(e) => setFiltros({ ...filtros, categoriaId: e.target.value })} options={[{ label: "Todas", value: "" }, ...categorias.map((c) => ({ label: c.nome, value: c.id }))]} />
-              <Select label="Responsável" value={filtros.responsavelId} onChange={(e) => setFiltros({ ...filtros, responsavelId: e.target.value })} options={[{ label: "Todos", value: "" }, ...responsaveis.map((r) => ({ label: r.nome, value: r.id }))]} />
-              <Select label="Conta/Cartão" value={filtros.contaId} onChange={(e) => setFiltros({ ...filtros, contaId: e.target.value })} options={[{ label: "Todas", value: "" }, ...contas.map((c) => ({ label: c.nome, value: c.id }))]} />
-            </div>
-            <div className="flex justify-between mt-6">
-              <button onClick={() => setShowFiltros(false)} className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition">Cancelar</button>
-              <button onClick={exportarRelatorio} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Gerar Excel</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-/* 🔹 Subcomponentes */
 function Card({ cor, titulo, valor, Icon }) {
   const corBorda = {
     green: "border-green-400/30 hover:shadow-green-500/20",
@@ -357,7 +342,6 @@ function Section({ titulo, children }) {
   );
 }
 
-/* 🔹 Gráficos ordenados e responsivos */
 function PieBox({ data, colors, formatCurrency }) {
   const sortedData = Array.isArray(data)
     ? [...data].sort((a, b) => (b.total || 0) - (a.total || 0))
@@ -386,43 +370,6 @@ function PieBox({ data, colors, formatCurrency }) {
           <Tooltip formatter={(v) => formatCurrency(v)} />
         </PieChart>
       </ResponsiveContainer>
-
-      {sortedData.length > 0 && (
-        <ul className="mt-3 w-full text-sm text-gray-300 space-y-1">
-          {sortedData.map((item, i) => {
-            const percent = totalGeral ? ((item.total / totalGeral) * 100).toFixed(1) : 0;
-            return (
-              <li key={i} className="flex items-center gap-2 justify-between">
-                <div className="flex items-center gap-2 truncate">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
-                  <span className="truncate">{item.nome}</span>
-                </div>
-                <span>{percent}%</span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/* 🔹 Select usado no modal */
-function Select({ label, value, onChange, options }) {
-  return (
-    <div>
-      <label className="block text-sm text-gray-400 mb-1">{label}</label>
-      <select
-        value={value}
-        onChange={onChange}
-        className="w-full bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg"
-      >
-        {options.map((opt, idx) => (
-          <option key={idx} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }
