@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
 import api from "../api";
-import "../scrollbar.css"; // 🔹 adiciona o estilo do scroll (ver abaixo o conteúdo do arquivo)
+import "../scrollbar.css";
 
 export default function Dashboard() {
   const [resumo, setResumo] = useState({
@@ -35,6 +35,19 @@ export default function Dashboard() {
   const [ano, setAno] = useState(dayjs().year());
   const [categorias, setCategorias] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
+
+  // 🔹 Carrega localStorage no início
+  useEffect(() => {
+    const salvos = localStorage.getItem("pagamentos");
+    if (salvos) setPagamentos(JSON.parse(salvos));
+  }, []);
+
+  // 🔹 Salva pagamentos no localStorage sempre que mudam
+  useEffect(() => {
+    if (pagamentos.length > 0) {
+      localStorage.setItem("pagamentos", JSON.stringify(pagamentos));
+    }
+  }, [pagamentos]);
 
   useEffect(() => {
     carregarCategorias();
@@ -76,7 +89,7 @@ export default function Dashboard() {
             : dayjs().format("YYYY-MM-DD"),
           categoriaNome: f.categoria?.nome || "",
           conta: f.conta || {},
-          pago: false,
+          pago: pagamentos.find((p) => p.id === f.id)?.pago || false, // mantém estado anterior
         }));
 
         setPagamentos(
@@ -152,7 +165,7 @@ export default function Dashboard() {
       </header>
 
       {/* Cards resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
         <Card cor="green" titulo="Receitas" valor={resumo.totalReceitas} Icon={ArrowUpCircleIcon} />
         <Card cor="red" titulo="Despesas Variáveis" valor={resumo.totalDespesas} Icon={ArrowDownCircleIcon} />
         <Card cor="yellow" titulo="Despesas Fixas" valor={resumo.totalFixas} Icon={ExclamationTriangleIcon} />
@@ -174,11 +187,9 @@ export default function Dashboard() {
 
         {/* Checklist lateral */}
         <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex flex-col max-h-[720px]">
-          <h2 className="text-lg font-semibold mb-3 text-gray-100">
-            📋 Pagamentos do Mês
-          </h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
-          <div className="flex-1 custom-scroll pr-2 space-y-4">
+          <div className="flex-1 custom-scroll pr-2 space-y-5">
             <PagamentosGrupo
               titulo="💰 Débito / Conta"
               lista={fixasDebito}
@@ -273,13 +284,15 @@ function Card({ cor, titulo, valor, Icon }) {
   }[cor];
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex items-center space-x-4">
-      <Icon className={`h-10 w-10 ${corTexto}`} />
-      <div>
-        <p className="text-sm text-gray-400 uppercase tracking-wide">{titulo}</p>
-        <p className={`text-2xl font-semibold ${corTexto}`}>
-          R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-        </p>
+    <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 flex items-center justify-between">
+      <div className="flex items-center space-x-4">
+        <Icon className={`h-8 w-8 ${corTexto}`} />
+        <div>
+          <p className="text-xs text-gray-400 uppercase tracking-wide">{titulo}</p>
+          <p className={`text-xl font-semibold ${corTexto}`}>
+            R$ {Number(valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -326,25 +339,23 @@ function PieBox({ data, colors, formatCurrency }) {
 
 function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
   return (
-    <div className="mb-6">
-      <h3 className="text-sm text-gray-400 font-semibold mb-2 border-b border-gray-800 pb-1 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {titulo.includes("Débito") && <span className="text-amber-400">💰</span>}
-          {titulo.includes("Crédito") && <span className="text-blue-400">💳</span>}
-          <span>{titulo}</span>
+    <div className="mb-6 bg-gray-950/30 rounded-xl border border-gray-800 p-3">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-800">
+        <div className="flex items-center gap-2 text-base font-semibold">
+          {titulo.includes("Débito") && <span className="text-amber-400 text-lg">💰</span>}
+          {titulo.includes("Crédito") && <span className="text-blue-400 text-lg">💳</span>}
+          <span className="text-gray-100">{titulo}</span>
         </div>
-        <span className="text-gray-300 text-sm font-medium">
-          {formatCurrency(total)}
-        </span>
-      </h3>
+        <span className="text-gray-200 font-semibold text-sm">{formatCurrency(total)}</span>
+      </div>
 
-      <div className={`space-y-1 ${lista.length > 8 ? "custom-scroll max-h-[360px]" : "overflow-y-visible"}`}>
+      <div className={`${lista.length > 8 ? "custom-scroll max-h-[360px]" : "overflow-y-visible"} space-y-1`}>
         {lista.length === 0 ? (
           <p className="text-gray-500 text-xs italic">Nenhum lançamento encontrado.</p>
         ) : (
           lista.map((item) => (
             <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={item.pago}
@@ -356,7 +367,7 @@ function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
                 </span>
               </label>
               <div className="text-right">
-                <p className="text-sm text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
+                <p className="text-xs text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
                 <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
               </div>
             </div>
