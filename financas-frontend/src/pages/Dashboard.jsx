@@ -85,9 +85,14 @@ export default function Dashboard() {
           data: f.diaVencimento
             ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
             : dayjs().format("YYYY-MM-DD"),
+          conta: f.conta || {}, // importante: para detectar cartão depois
           pago: false,
         }));
-        setPagamentos(fixas);
+
+        // 🔹 Ordena pelo dia do vencimento (menor primeiro)
+        setPagamentos(
+          fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
+        );
       } else {
         setPagamentos([]);
       }
@@ -96,7 +101,6 @@ export default function Dashboard() {
       setPagamentos([]);
     }
   };
-
 
   const togglePago = (id) => {
     setPagamentos(
