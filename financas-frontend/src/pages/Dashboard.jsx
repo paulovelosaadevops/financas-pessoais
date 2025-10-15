@@ -11,9 +11,9 @@ import {
 } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
 import api from "../api";
+import "../scrollbar.css"; // 🔹 adiciona o estilo do scroll (ver abaixo o conteúdo do arquivo)
 
 export default function Dashboard() {
-
   const [resumo, setResumo] = useState({
     totalReceitas: 0,
     totalDespesas: 0,
@@ -95,14 +95,11 @@ export default function Dashboard() {
     );
   };
 
-  // 🔹 Agora usamos o tipoPagamento direto do backend
   const fixasCredito = pagamentos.filter((p) => p.tipoPagamento === "CREDITO");
   const fixasDebito = pagamentos.filter((p) => p.tipoPagamento === "DEBITO");
 
   const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
   const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
-
-  // 🔹 Novo total de despesas fixas pagas
   const totalFixasPagas = pagamentos
     .filter((p) => p.pago)
     .reduce((sum, i) => sum + (i.valor || 0), 0);
@@ -121,7 +118,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8">
-
       {/* Cabeçalho */}
       <header className="mb-10 rounded-2xl bg-gradient-to-r from-gray-900 via-gray-950 to-black p-6 shadow-lg border border-gray-800">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
@@ -182,7 +178,7 @@ export default function Dashboard() {
             📋 Pagamentos do Mês
           </h2>
 
-          <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+          <div className="flex-1 custom-scroll pr-2 space-y-4">
             <PagamentosGrupo
               titulo="💰 Débito / Conta"
               lista={fixasDebito}
@@ -190,7 +186,6 @@ export default function Dashboard() {
               togglePago={togglePago}
               formatCurrency={formatCurrency}
             />
-
             <PagamentosGrupo
               titulo="💳 Cartão de Crédito"
               lista={fixasCredito}
@@ -207,7 +202,6 @@ export default function Dashboard() {
         <Section titulo="Despesas Fixas por Categoria">
           <PieBox data={resumo.fixasCategorias} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
         </Section>
-
         <Section titulo="Despesas Fixas por Responsável">
           <PieBox data={resumo.fixasResponsaveis} colors={COLORS_FIXAS} formatCurrency={formatCurrency} />
         </Section>
@@ -293,7 +287,7 @@ function Card({ cor, titulo, valor, Icon }) {
 
 function Section({ titulo, children, className = "" }) {
   return (
-    <div className={`bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 transition-all duration-300 ${className}`}>
+    <div className={`bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-700 shadow-lg rounded-2xl p-6 ${className}`}>
       <h2 className="text-lg font-semibold mb-4 text-gray-100">{titulo}</h2>
       {children}
     </div>
@@ -344,7 +338,7 @@ function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
         </span>
       </h3>
 
-      <div className={`space-y-1 ${lista.length > 8 ? "overflow-y-auto max-h-[360px]" : "overflow-y-visible"}`}>
+      <div className={`space-y-1 ${lista.length > 8 ? "custom-scroll max-h-[360px]" : "overflow-y-visible"}`}>
         {lista.length === 0 ? (
           <p className="text-gray-500 text-xs italic">Nenhum lançamento encontrado.</p>
         ) : (
