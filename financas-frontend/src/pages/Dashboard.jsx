@@ -251,12 +251,29 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-3 text-gray-100">📋 Pagamentos do Mês</h2>
 
           {(() => {
-            const fixasCredito = pagamentos.filter((p) =>
-              p.categoriaNome?.toLowerCase().includes("cartão de crédito")
-            );
-            const fixasDebito = pagamentos.filter(
-              (p) => !p.categoriaNome?.toLowerCase().includes("cartão de crédito")
-            );
+            const fixasCredito = pagamentos.filter((p) => {
+              const nomeCategoria = (p.categoriaNome || "").toUpperCase();
+              const nomeConta = (p.conta?.nome || "").toUpperCase();
+
+              return (
+                nomeCategoria.includes("CARTÃO DE CRÉDITO") ||
+                nomeCategoria.includes("CARTAO DE CREDITO") ||
+                nomeConta.includes("CRÉDITO") ||
+                nomeConta.includes("CREDITO")
+              );
+            });
+
+            const fixasDebito = pagamentos.filter((p) => {
+              const nomeCategoria = (p.categoriaNome || "").toUpperCase();
+              const nomeConta = (p.conta?.nome || "").toUpperCase();
+
+              return (
+                !nomeCategoria.includes("CARTÃO DE CRÉDITO") &&
+                !nomeCategoria.includes("CARTAO DE CREDITO") &&
+                !nomeConta.includes("CRÉDITO") &&
+                !nomeConta.includes("CREDITO")
+              );
+            });
 
             const renderGrupo = (titulo, lista) => (
               <div className="mb-4">
