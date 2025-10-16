@@ -45,11 +45,22 @@ public class DashboardController {
         BigDecimal receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
         BigDecimal despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
         BigDecimal despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
-        BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
+
+        // 🔹 Novos: movimentos de metas
+        BigDecimal transferencias = lancamentoRepository.totalTransferenciasPeriodo(inicio, fim);
+        BigDecimal resgates = lancamentoRepository.totalResgatesPeriodo(inicio, fim);
+
+        // 🔹 Saldo real — considerando metas
+        BigDecimal saldo = receitas
+                .subtract(despesasVariaveis.add(despesasFixas))
+                .subtract(transferencias)
+                .add(resgates);
 
         dados.put("totalReceitas", receitas);
         dados.put("totalDespesas", despesasVariaveis);
         dados.put("totalFixas", despesasFixas);
+        dados.put("totalTransferencias", transferencias);
+        dados.put("totalResgates", resgates);
         dados.put("saldo", saldo);
 
         // 🔹 Pagamentos do mês

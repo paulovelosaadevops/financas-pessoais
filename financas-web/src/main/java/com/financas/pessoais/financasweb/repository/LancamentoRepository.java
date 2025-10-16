@@ -31,6 +31,24 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
            """)
     BigDecimal totalDespesasPeriodo(LocalDate inicio, LocalDate fim);
 
+    // 🔹 NOVO: total transferido para metas no período
+    @Query("""
+           SELECT COALESCE(SUM(l.valor),0)
+             FROM Lancamento l
+            WHERE l.tipo = 'TRANSFERENCIA_META'
+              AND l.data BETWEEN :inicio AND :fim
+           """)
+    BigDecimal totalTransferenciasPeriodo(LocalDate inicio, LocalDate fim);
+
+    // 🔹 NOVO: total resgatado de metas no período
+    @Query("""
+           SELECT COALESCE(SUM(l.valor),0)
+             FROM Lancamento l
+            WHERE l.tipo = 'RESGATE_META'
+              AND l.data BETWEEN :inicio AND :fim
+           """)
+    BigDecimal totalResgatesPeriodo(LocalDate inicio, LocalDate fim);
+
     @Query("""
            SELECT new com.financas.pessoais.financasweb.dto.AgrupamentoDTO(c.nome, COALESCE(SUM(l.valor),0))
              FROM Lancamento l JOIN l.categoria c
@@ -89,7 +107,6 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     // ==============================================================
     // ANTIGOS MÉTODOS — Mantidos para compatibilidade com controllers antigos
     // ==============================================================
-
     @Query("""
            SELECT COALESCE(SUM(l.valor),0)
              FROM Lancamento l
@@ -141,7 +158,6 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     // ==============================================================
     // Métodos auxiliares
     // ==============================================================
-
     @Query("""
        SELECT l FROM Lancamento l
         WHERE (:ano IS NULL OR YEAR(l.data) = :ano)
@@ -160,7 +176,6 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
             Long responsavelId,
             Long contaId
     );
-
 
     @Query("""
     SELECT 

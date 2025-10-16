@@ -11,6 +11,7 @@ export default function Lancamentos() {
   const [categorias, setCategorias] = useState([]);
   const [contas, setContas] = useState([]);
   const [responsaveis, setResponsaveis] = useState([]);
+  const [metas, setMetas] = useState([]);
 
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -31,6 +32,7 @@ export default function Lancamentos() {
       dataFimRecorrencia: "",
       parcelado: false,
       parcelasFaltantes: "",
+      meta: null,
     };
   }
 
@@ -38,17 +40,20 @@ export default function Lancamentos() {
     api.get("/lancamentos").then((res) => setLancamentos(res.data));
     api.get("/parametros/contas").then((res) => setContas(res.data));
     api.get("/parametros/responsaveis").then((res) => setResponsaveis(res.data));
+    api.get("/metas").then((res) => setMetas(res.data));
   }, []);
 
   useEffect(() => {
-    if (form.tipo) {
+    if (form.tipo === "DESPESA" || form.tipo === "RECEITA") {
       api.get(`/categorias/tipo/${form.tipo}`).then((res) => setCategorias(res.data));
+    } else {
+      setCategorias([]);
     }
   }, [form.tipo]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (["categoria", "contaOuCartao", "responsavel"].includes(name)) {
+    if (["categoria", "contaOuCartao", "responsavel", "meta"].includes(name)) {
       setForm({ ...form, [name]: value ? { id: Number(value) } : null });
     } else {
       setForm({ ...form, [name]: type === "checkbox" ? checked : value });
@@ -97,6 +102,7 @@ export default function Lancamentos() {
       categoria: l.categoria ? { id: l.categoria.id } : null,
       contaOuCartao: l.contaOuCartao ? { id: l.contaOuCartao.id } : null,
       responsavel: l.responsavel ? { id: l.responsavel.id } : null,
+      meta: l.meta ? { id: l.meta.id } : null,
       data: l.data ? dayjs(l.data).format("DD/MM/YYYY") : "",
       dataFimRecorrencia: l.dataFimRecorrencia ? dayjs(l.dataFimRecorrencia).format("DD/MM/YYYY") : "",
     });
@@ -165,12 +171,22 @@ export default function Lancamentos() {
                   }`}
                 >
                   <td className="p-3">{dayjs(l.data).format("DD/MM/YYYY")}</td>
-                  <td className={`p-3 font-semibold ${l.tipo === "RECEITA" ? "text-emerald-400" : "text-red-400"}`}>
+                  <td
+                    className={`p-3 font-semibold ${
+                      l.tipo === "RECEITA"
+                        ? "text-emerald-400"
+                        : l.tipo === "TRANSFERENCIA_META"
+                        ? "text-blue-400"
+                        : l.tipo === "RESGATE_META"
+                        ? "text-amber-400"
+                        : "text-red-400"
+                    }`}
+                  >
                     {l.tipo}
                   </td>
-                  <td className="p-3">{l.categoria?.nome}</td>
-                  <td className="p-3">{l.contaOuCartao?.nome}</td>
-                  <td className="p-3">{l.responsavel?.nome}</td>
+                  <td className="p-3">{l.categoria?.nome || "-"}</td>
+                  <td className="p-3">{l.contaOuCartao?.nome || "-"}</td>
+                  <td className="p-3">{l.responsavel?.nome || "-"}</td>
                   <td className="p-3">{l.descricao}</td>
                   <td className="p-3">
                     {l.recorrente
@@ -211,30 +227,43 @@ export default function Lancamentos() {
       {/* 🟦 Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl border border-gray-700">
+          <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-4xl border border-gray-700 overflow-y-auto max-h-[90vh]">
             <h2 className="text-2xl font-bold mb-6 flex items-center text-white">
               {editando ? "✏️ Editar Lançamento" : "➕ Novo Lançamento"}
             </h2>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-6 gap-6">
-              {/* Data */}
               <CampoData form={form} setForm={setForm} />
-              {/* Tipo */}
               <CampoTipo form={form} handleChange={handleChange} />
-              {/* Categoria */}
-              <CampoSelect label="Categoria" name="categoria" value={form.categoria?.id} onChange={handleChange} options={categorias} />
-              {/* Valor */}
-              <CampoValor form={form} handleChange={handleChange} />
-              {/* Conta */}
-              <CampoSelect label="Conta/Cartão" name="contaOuCartao" value={form.contaOuCartao?.id} onChange={handleChange} options={contas} />
-              {/* Responsável */}
-              <CampoSelect label="Responsável" name="responsavel" value={form.responsavel?.id} onChange={handleChange} options={responsaveis} />
-              {/* Descrição */}
-              <CampoDescricao form={form} handleChange={handleChange} />
-              {/* Avançadas */}
-              <OpcoesAvancadas form={form} setForm={setForm} handleChange={handleChange} />
 
-              {/* Botões */}
+              {(form.tipo === "DESPESA" || form.tipo === "RECEITA") && (
+                <>
+                  <CampoSelect label="Categoria" name="categoria" value={form.categoria?.id} onChange={handleChange} options={categorias} />
+                  <CampoValor form={form} handleChange={handleChange} />
+                  <CampoSelect label="Conta/Cartão" name="contaOuCartao" value={form.contaOuCartao?.id} onChange={handleChange} options={contas} />
+                  <CampoSelect label="Responsável" name="responsavel" value={form.responsavel?.id} onChange={handleChange} options={responsaveis} />
+                  <CampoDescricao form={form} handleChange={handleChange} />
+                  <OpcoesAvancadas form={form} setForm={setForm} handleChange={handleChange} />
+                </>
+              )}
+
+              {(form.tipo === "TRANSFERENCIA_META" || form.tipo === "RESGATE_META") && (
+                <>
+                  <CampoSelect
+                    label="Meta Financeira"
+                    name="meta"
+                    value={form.meta?.id}
+                    onChange={(e) => {
+                      const id = e.target.value ? Number(e.target.value) : null;
+                      setForm({ ...form, meta: id ? { id } : null });
+                    }}
+                    options={metas}
+                  />
+                  <CampoValor form={form} handleChange={handleChange} />
+                  <CampoDescricao form={form} handleChange={handleChange} />
+                </>
+              )}
+
               <div className="md:col-span-6 flex justify-end space-x-4 mt-6">
                 <button
                   type="button"
@@ -262,11 +291,7 @@ export default function Lancamentos() {
 const CampoData = ({ form, setForm }) => (
   <div className="md:col-span-2">
     <label className="block text-sm text-gray-400 mb-1">Data</label>
-    <InputMask
-      mask="99/99/9999"
-      value={form.data}
-      onChange={(e) => setForm({ ...form, data: e.target.value })}
-    >
+    <InputMask mask="99/99/9999" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })}>
       {(inputProps) => (
         <input
           {...inputProps}
@@ -291,6 +316,8 @@ const CampoTipo = ({ form, handleChange }) => (
     >
       <option value="DESPESA">Despesa</option>
       <option value="RECEITA">Receita</option>
+      <option value="TRANSFERENCIA_META">Transferência para Meta</option>
+      <option value="RESGATE_META">Resgate de Meta</option>
     </select>
   </div>
 );
@@ -307,7 +334,7 @@ const CampoSelect = ({ label, name, value, onChange, options }) => (
       <option value="">Selecione</option>
       {options.map((opt) => (
         <option key={opt.id} value={opt.id}>
-          {opt.nome}
+          {opt.nome || opt.descricao}
         </option>
       ))}
     </select>
@@ -325,6 +352,7 @@ const CampoValor = ({ form, handleChange }) => (
       value={form.valor}
       onChange={handleChange}
       className="w-full p-2 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
+      required
     />
   </div>
 );
@@ -339,6 +367,7 @@ const CampoDescricao = ({ form, handleChange }) => (
       value={form.descricao}
       onChange={handleChange}
       className="w-full p-2 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500"
+      required
     />
   </div>
 );
@@ -362,11 +391,7 @@ const OpcoesAvancadas = ({ form, setForm, handleChange }) => (
     </label>
 
     {form.recorrente && (
-      <InputMask
-        mask="99/99/9999"
-        value={form.dataFimRecorrencia}
-        onChange={(e) => setForm({ ...form, dataFimRecorrencia: e.target.value })}
-      >
+      <InputMask mask="99/99/9999" value={form.dataFimRecorrencia} onChange={(e) => setForm({ ...form, dataFimRecorrencia: e.target.value })}>
         {(inputProps) => (
           <input
             {...inputProps}

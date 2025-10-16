@@ -6,6 +6,7 @@ import com.financas.pessoais.financasweb.repository.*;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -18,15 +19,18 @@ public class LancamentoController {
     private final CategoriaRepository categoriaRepo;
     private final ContaRepository contaRepo;
     private final ResponsavelRepository responsavelRepo;
+    private final MetaFinanceiraRepository metaRepo;
 
     public LancamentoController(LancamentoRepository repository,
                                 CategoriaRepository categoriaRepo,
                                 ContaRepository contaRepo,
-                                ResponsavelRepository responsavelRepo) {
+                                ResponsavelRepository responsavelRepo,
+                                MetaFinanceiraRepository metaRepo) {
         this.repository = repository;
         this.categoriaRepo = categoriaRepo;
         this.contaRepo = contaRepo;
         this.responsavelRepo = responsavelRepo;
+        this.metaRepo = metaRepo;
     }
 
     // 🔹 LISTAR TODOS
@@ -39,6 +43,7 @@ public class LancamentoController {
     @PostMapping
     public Lancamento salvar(@Valid @RequestBody Lancamento lancamento) {
         vincularRelacionamentos(lancamento);
+        tratarMetaFinanceira(lancamento);
         return repository.save(lancamento);
     }
 
@@ -48,8 +53,9 @@ public class LancamentoController {
         Lancamento existente = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lançamento não encontrado"));
 
-        lancamento.setId(existente.getId()); // garante que atualiza em vez de criar
+        lancamento.setId(existente.getId());
         vincularRelacionamentos(lancamento);
+        tratarMetaFinanceira(lancamento);
 
         return repository.save(lancamento);
     }
@@ -63,7 +69,7 @@ public class LancamentoController {
         repository.deleteById(id);
     }
 
-    // 🔹 Agrupamentos (agora com ano/mês opcionais)
+    // 🔹 Agrupamentos
     @GetMapping("/categorias")
     public List<AgrupamentoDTO> despesasPorCategoria(
             @RequestParam(required = false) Integer ano,
@@ -94,7 +100,7 @@ public class LancamentoController {
         return repository.despesasPorBanco(a, m);
     }
 
-    // 🔹 Utilitário privado para vincular Categoria, Conta e Responsável
+    // 🔹 Vincular Categoria / Conta / Responsável
     private void vincularRelacionamentos(Lancamento lancamento) {
         if (lancamento.getCategoria() != null && lancamento.getCategoria().getId() != null) {
             Categoria categoria = categoriaRepo.findById(lancamento.getCategoria().getId())
@@ -112,6 +118,28 @@ public class LancamentoController {
             Responsavel responsavel = responsavelRepo.findById(lancamento.getResponsavel().getId())
                     .orElseThrow(() -> new RuntimeException("Responsável não encontrado"));
             lancamento.setResponsavel(responsavel);
+        }
+
+        if (lancamento.getMeta() != null && lancamento.getMeta().getId() != null) {
+            MetaFinanceira meta = metaRepo.findById(lancamento.getMeta().getId())
+                    .orElseThrow(() -> new RuntimeException("Meta financeira não encontrada"));
+            lancamento.setMeta(meta);
+        }
+    }
+
+    // 🔸 NOVO: Tratamento automático de lançamentos ligados a metas
+    private void tratarMetaFinanceira(Lancamento lancamento) {
+        if (lancamento.getMeta() == null) return;
+
+        String tipo = lancamento.getTipo();
+        BigDecimal valor = lancamento.getValor() != null ? lancamento.getValor() : BigDecimal.ZERO;
+
+        if ("TRANSFERENCIA_META".equalsIgnoreCase(tipo)) {
+            lancamento.setDescricao("Transferência para meta: " + lancamento.getMeta().getDescricao());
+            lancamento.setValor(valor.abs()); // sempre positivo
+        } else if ("RESGATE_META".equalsIgnoreCase(tipo)) {
+            lancamento.setDescricao("Resgate da meta: " + lancamento.getMeta().getDescricao());
+            lancamento.setValor(valor.abs().negate()); // negativo para resgatar
         }
     }
 }
