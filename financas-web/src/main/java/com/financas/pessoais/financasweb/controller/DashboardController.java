@@ -108,51 +108,35 @@ public class DashboardController {
         }
 
         // 🔹 Comparativo mensal
-        List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
-        Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
-        for (Object[] row : mensal) {
-            int anoRow = ((Number) row[0]).intValue();
-            int mesRow = ((Number) row[1]).intValue();
-
-            BigDecimal receitasRow = row[2] != null ? new BigDecimal(row[2].toString()) : BigDecimal.ZERO;
-            BigDecimal variaveisRow = row[3] != null ? new BigDecimal(row[3].toString()) : BigDecimal.ZERO;
-            BigDecimal fixasRow = fixasPorMes.getOrDefault(mesRow, BigDecimal.ZERO);
-
-            Map<String, Object> item = new HashMap<>();
-            item.put("ano", anoRow);
-            item.put("mes", mesRow);
-            item.put("receitas", receitasRow);
-            item.put("variaveis", variaveisRow);
-            item.put("fixas", fixasRow);
-            mapaMensal.put(anoRow + "-" + mesRow, item);
-        }
-
         for (int m = 1; m <= 12; m++) {
             String chave = ano + "-" + m;
-            mapaMensal.putIfAbsent(chave, Map.of(
-                    "ano", ano,
-                    "mes", m,
-                    "receitas", BigDecimal.ZERO,
-                    "variaveis", BigDecimal.ZERO,
-                    "fixas", fixasPorMes.getOrDefault(m, BigDecimal.ZERO)
-            ));
+            if (!mapaMensal.containsKey(chave)) {
+                Map<String, Object> vazio = new HashMap<>();
+                vazio.put("ano", ano);
+                vazio.put("mes", m);
+                vazio.put("receitas", BigDecimal.ZERO);
+                vazio.put("variaveis", BigDecimal.ZERO);
+                vazio.put("fixas", fixasPorMes.getOrDefault(m, BigDecimal.ZERO));
+                mapaMensal.put(chave, vazio);
+            }
         }
 
-        List<Map<String, Object>> listaMensal = mapaMensal.values().stream()
-                .sorted(Comparator.comparing(a -> (Integer) a.get("mes")))
-                .toList();
+        List<Map<String, Object>> listaMensal = new ArrayList<>(mapaMensal.values());
+        listaMensal.sort(Comparator.comparing(a -> (Integer) a.get("mes")));
         dados.put("mensal", listaMensal);
 
         // 🔹 Últimos lançamentos leves
         List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
-        List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> Map.of(
-                "id", l.getId(),
-                "descricao", l.getDescricao(),
-                "valor", l.getValor(),
-                "data", l.getData(),
-                "categoria", l.getCategoria() != null ? l.getCategoria().getNome() : null,
-                "responsavel", l.getResponsavel() != null ? l.getResponsavel().getNome() : null
-        )).toList();
+        List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", l.getId());
+            map.put("descricao", l.getDescricao());
+            map.put("valor", l.getValor());
+            map.put("data", l.getData());
+            map.put("categoria", l.getCategoria() != null ? l.getCategoria().getNome() : null);
+            map.put("responsavel", l.getResponsavel() != null ? l.getResponsavel().getNome() : null);
+            return map;
+        }).collect(Collectors.toList());
         dados.put("ultimosLancamentos", ultimosFormatados);
 
         long endAll = System.currentTimeMillis();
