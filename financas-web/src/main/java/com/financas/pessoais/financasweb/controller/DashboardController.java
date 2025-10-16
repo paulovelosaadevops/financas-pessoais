@@ -114,7 +114,7 @@ public class DashboardController {
             mapaMensal.put(anoRow + "-" + mesRow, item);
         }
 
-        // Garante todos os meses
+        // Garante todos os meses do ano
         for (int m = 1; m <= 12; m++) {
             String chave = ano + "-" + m;
             if (!mapaMensal.containsKey(chave)) {
@@ -135,11 +135,23 @@ public class DashboardController {
         List<Map<String, Object>> listaMensal = mapaMensal.values().stream()
                 .sorted(Comparator.comparing(a -> (Integer) a.get("mes")))
                 .toList();
+
         dados.put("mensal", listaMensal);
 
-        // Últimos lançamentos
+        // Últimos lançamentos (convertidos manualmente para evitar proxies)
         List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
-        dados.put("ultimosLancamentos", ultimos);
+        List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", l.getId());
+            map.put("descricao", l.getDescricao());
+            map.put("valor", l.getValor());
+            map.put("data", l.getData());
+            map.put("categoria", l.getCategoria() != null ? l.getCategoria().getNome() : null);
+            map.put("responsavel", l.getResponsavel() != null ? l.getResponsavel().getNome() : null);
+            return map;
+        }).collect(Collectors.toList());
+
+        dados.put("ultimosLancamentos", ultimosFormatados);
 
         return dados;
     }
@@ -169,5 +181,4 @@ public class DashboardController {
         pagamentoRepository.save(pagamento);
         return ResponseEntity.ok("Despesa marcada como " + (pago ? "paga" : "não paga") + " para " + mes + "/" + ano);
     }
-
 }
