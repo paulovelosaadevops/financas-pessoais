@@ -47,4 +47,10 @@ public class Lancamento {
 
     @Min(value = 1, message = "Número de parcelas deve ser pelo menos 1")
     private Integer parcelasFaltantes;
+
+    @Column(name = "meta")
+    private boolean meta = false;
+
+    public boolean isMeta() { return meta; }
+    public void setMeta(boolean meta) { this.meta = meta; }
 }

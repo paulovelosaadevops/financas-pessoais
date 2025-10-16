@@ -4,6 +4,7 @@ import {
   BanknotesIcon,
   UserGroupIcon,
   CalendarDaysIcon,
+  TrophyIcon,
 } from "@heroicons/react/24/solid";
 
 export default function Parametros() {
@@ -32,6 +33,12 @@ export default function Parametros() {
       description: "Cadastre suas despesas recorrentes mensais",
       icon: <CalendarDaysIcon className="h-10 w-10 text-red-400" />,
     },
+    {
+      path: "/parametros/metas",
+      label: "Metas Financeiras",
+      description: "Defina objetivos de economia, investimento e controle",
+      icon: <TrophyIcon className="h-10 w-10 text-amber-400" />,
+    },
   ];
 
   return (
@@ -47,7 +54,9 @@ export default function Parametros() {
           >
             {c.icon}
             <h2 className="text-xl font-semibold mt-4">{c.label}</h2>
-            <p className="text-gray-400 text-center text-sm mt-2">{c.description}</p>
+            <p className="text-gray-400 text-center text-sm mt-2">
+              {c.description}
+            </p>
           </Link>
         ))}
       </div>
