@@ -1,15 +1,18 @@
 package com.financas.pessoais.financasweb.controller;
 
+import com.financas.pessoais.financasweb.model.DespesaFixa;
+import com.financas.pessoais.financasweb.model.DespesaFixaPagamento;
 import com.financas.pessoais.financasweb.model.Lancamento;
+import com.financas.pessoais.financasweb.repository.DespesaFixaPagamentoRepository;
 import com.financas.pessoais.financasweb.repository.DespesaFixaRepository;
 import com.financas.pessoais.financasweb.repository.LancamentoRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/dashboard")
@@ -18,20 +21,24 @@ public class DashboardController {
 
     private final LancamentoRepository lancamentoRepository;
     private final DespesaFixaRepository despesaFixaRepository;
+    private final DespesaFixaPagamentoRepository pagamentoRepository;
 
-    public DashboardController(LancamentoRepository lancamentoRepository,
-                               DespesaFixaRepository despesaFixaRepository) {
+    public DashboardController(
+            LancamentoRepository lancamentoRepository,
+            DespesaFixaRepository despesaFixaRepository,
+            DespesaFixaPagamentoRepository pagamentoRepository
+    ) {
         this.lancamentoRepository = lancamentoRepository;
         this.despesaFixaRepository = despesaFixaRepository;
+        this.pagamentoRepository = pagamentoRepository;
     }
 
     @GetMapping
     public Map<String, Object> getDashboard(@RequestParam int ano, @RequestParam int mes) {
-        // 🔹 Define o período exato do mês
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        // Totais principais — agora usando o intervalo corretamente
+        // Totais principais
         BigDecimal receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
         BigDecimal despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
         BigDecimal despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
@@ -44,12 +51,36 @@ public class DashboardController {
         dados.put("totalFixas", despesasFixas);
         dados.put("saldo", saldo);
 
-        // Variáveis
+        // Agrupamentos
         dados.put("categorias", lancamentoRepository.despesasPorCategoriaPeriodo(inicio, fim));
         dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
         dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
 
-        // Fixas (filtradas corretamente)
+        // Fixas (com status de pagamento)
+        List<DespesaFixa> despesasFixasList = despesaFixaRepository.findAll();
+        List<Map<String, Object>> fixasComStatus = despesasFixasList.stream().map(df -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", df.getId());
+            item.put("descricao", df.getDescricao());
+            item.put("valor", df.getValor());
+            item.put("diaVencimento", df.getDiaVencimento());
+            item.put("tipoPagamento", df.getTipoPagamento());
+
+            Optional<DespesaFixaPagamento> pagamentoOpt =
+                    pagamentoRepository.findByDespesaFixaAndMesReferenciaAndAnoReferencia(df, mes, ano);
+
+            boolean pago = pagamentoOpt.map(p -> Boolean.TRUE.equals(p.getPago())).orElse(false);
+            LocalDate dataPagamento = pagamentoOpt.map(DespesaFixaPagamento::getDataPagamento).orElse(null);
+
+            item.put("pago", pago);
+            item.put("dataPagamento", dataPagamento);
+
+            return item;
+        }).collect(Collectors.toList());
+
+        dados.put("despesasFixas", fixasComStatus);
+
+        // Fixas agrupadas
         dados.put("fixasCategorias", despesaFixaRepository.despesasFixasPorCategoria(ano, mes));
         dados.put("fixasResponsaveis", despesaFixaRepository.despesasFixasPorResponsavel(ano, mes));
 
@@ -58,10 +89,8 @@ public class DashboardController {
         dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
-        // Mensal — compara receitas, variáveis e fixas mês a mês
+        // Comparativo mensal
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
-
-// Mapeia meses que já vieram do banco (ex: lançamentos)
         Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
 
         for (Object[] row : mensal) {
@@ -85,8 +114,7 @@ public class DashboardController {
             mapaMensal.put(anoRow + "-" + mesRow, item);
         }
 
-// 🔹 Garante que meses sem lançamentos também apareçam
-        LocalDate hoje = LocalDate.now();
+        // Garante todos os meses
         for (int m = 1; m <= 12; m++) {
             String chave = ano + "-" + m;
             if (!mapaMensal.containsKey(chave)) {
@@ -104,19 +132,42 @@ public class DashboardController {
             }
         }
 
-        // 🔹 Converte o mapa em lista ordenada por mês
         List<Map<String, Object>> listaMensal = mapaMensal.values().stream()
-                .sorted((a, b) -> ((Integer) a.get("mes")).compareTo((Integer) b.get("mes")))
+                .sorted(Comparator.comparing(a -> (Integer) a.get("mes")))
                 .toList();
-
         dados.put("mensal", listaMensal);
 
-
         // Últimos lançamentos
-        // 🔹 Últimos lançamentos — apenas do mês/ano selecionados
         List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
         dados.put("ultimosLancamentos", ultimos);
 
         return dados;
     }
+
+    @PostMapping("/despesas-fixas/pagar/{id}")
+    public ResponseEntity<?> pagarDespesaFixa(
+            @PathVariable Long id,
+            @RequestParam Integer mes,
+            @RequestParam Integer ano,
+            @RequestParam Boolean pago
+    ) {
+        DespesaFixa despesa = despesaFixaRepository.findById(id).orElse(null);
+        if (despesa == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Optional<DespesaFixaPagamento> pagamentoOpt =
+                pagamentoRepository.findByDespesaFixaAndMesReferenciaAndAnoReferencia(despesa, mes, ano);
+
+        DespesaFixaPagamento pagamento = pagamentoOpt.orElse(new DespesaFixaPagamento());
+        pagamento.setDespesaFixa(despesa);
+        pagamento.setMesReferencia(mes);
+        pagamento.setAnoReferencia(ano);
+        pagamento.setPago(pago);
+        pagamento.setDataPagamento(pago ? LocalDate.now() : null);
+
+        pagamentoRepository.save(pagamento);
+        return ResponseEntity.ok("Despesa marcada como " + (pago ? "paga" : "não paga") + " para " + mes + "/" + ano);
+    }
+
 }

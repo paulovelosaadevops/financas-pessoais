@@ -29,103 +29,49 @@ export default function Dashboard() {
     fixasCategorias: [],
     fixasResponsaveis: [],
     mensal: [],
+    despesasFixas: [],
   });
 
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
-  const [categorias, setCategorias] = useState([]);
-  const [pagamentos, setPagamentos] = useState([]);
-
-  // 🔹 Carrega pagamentos do mês/ano atual do localStorage
-  useEffect(() => {
-    const chave = `pagamentos-${ano}-${mes}`;
-    const salvos = localStorage.getItem(chave);
-    if (salvos) setPagamentos(JSON.parse(salvos));
-    else setPagamentos([]); // zera se ainda não há nada salvo
-  }, [mes, ano]);
-
-  // 🔹 Salva automaticamente toda vez que houver mudança no estado
-  useEffect(() => {
-    const chave = `pagamentos-${ano}-${mes}`;
-    localStorage.setItem(chave, JSON.stringify(pagamentos));
-  }, [pagamentos, mes, ano]);
-
-  useEffect(() => {
-    carregarCategorias();
-  }, []);
 
   useEffect(() => {
     carregarResumo();
-    carregarPagamentosFixos();
-  }, [mes, ano, categorias]);
+  }, [mes, ano]);
 
-  const carregarCategorias = async () => {
+  const carregarResumo = async () => {
     try {
-      const res = await api.get("/categorias");
-      setCategorias(res.data || []);
+      const res = await api.get(`/dashboard?ano=${ano}&mes=${mes}`);
+      setResumo(res.data);
     } catch (err) {
-      console.error("Erro ao carregar categorias:", err);
-      setCategorias([]);
+      console.error("Erro ao carregar resumo:", err);
     }
   };
 
-  const carregarResumo = () => {
-    api
-      .get(`/dashboard?ano=${ano}&mes=${mes}`)
-      .then((res) => setResumo(res.data))
-      .catch((err) => console.error("Erro ao carregar resumo:", err));
-  };
-
-  // 🔹 Corrigido: carrega fixas e aplica apenas os pagos do mês atual
-  const carregarPagamentosFixos = async () => {
+  // 🔹 Marca ou desmarca pagamento e atualiza a lista
+  const togglePago = async (id, estadoAtual) => {
     try {
-      const chave = `pagamentos-${ano}-${mes}`;
-      const pagosMes = JSON.parse(localStorage.getItem(chave) || "[]");
-
-      // 🔹 Recria os pagamentos do zero, sem reusar o estado anterior
-      const res = await api.get("/parametros/despesas-fixas");
-
-      if (Array.isArray(res.data)) {
-        // 🔸 Aqui garantimos que cada mês é isolado:
-        const fixas = res.data.map((f) => {
-          const registroPagoMes = pagosMes.find((p) => p.id === f.id);
-          return {
-            id: f.id,
-            descricao: f.descricao,
-            valor: f.valor,
-            tipoPagamento: f.tipoPagamento || "DEBITO",
-            data: f.diaVencimento
-              ? dayjs(`${ano}-${String(mes).padStart(2, "0")}-${String(f.diaVencimento).padStart(2, "0")}`).format("YYYY-MM-DD")
-              : dayjs().format("YYYY-MM-DD"),
-            categoriaNome: f.categoria?.nome || "",
-            conta: f.conta || {},
-            pago: registroPagoMes ? registroPagoMes.pago : false, // só respeita se for do mês atual
-          };
-        });
-
-        setPagamentos(
-          fixas.sort((a, b) => dayjs(a.data).date() - dayjs(b.data).date())
-        );
-      }
+      const novoEstado = !estadoAtual;
+      await api.post(
+        `/dashboard/despesas-fixas/pagar/${id}?mes=${mes}&ano=${ano}&pago=${novoEstado}`
+      );
+      await carregarResumo();
     } catch (err) {
-      console.error("Erro ao carregar despesas fixas:", err);
-      setPagamentos([]);
+      console.error("Erro ao atualizar pagamento:", err);
     }
-  };
-
-  const togglePago = (id) => {
-    setPagamentos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, pago: !p.pago } : p))
-    );
   };
 
   // 🔹 Separação dos tipos
-  const fixasCredito = pagamentos.filter((p) => p.tipoPagamento === "CREDITO");
-  const fixasDebito = pagamentos.filter((p) => p.tipoPagamento === "DEBITO");
+  const fixasCredito = resumo.despesasFixas.filter(
+    (p) => p.tipoPagamento === "CREDITO"
+  );
+  const fixasDebito = resumo.despesasFixas.filter(
+    (p) => p.tipoPagamento === "DEBITO"
+  );
 
   const totalDebito = fixasDebito.reduce((sum, i) => sum + (i.valor || 0), 0);
   const totalCredito = fixasCredito.reduce((sum, i) => sum + (i.valor || 0), 0);
-  const totalFixasPagas = pagamentos
+  const totalFixasPagas = resumo.despesasFixas
     .filter((p) => p.pago)
     .reduce((sum, i) => sum + (i.valor || 0), 0);
 
@@ -134,7 +80,9 @@ export default function Dashboard() {
   const COLORS_FIXAS = ["#facc15", "#eab308", "#ca8a04", "#a16207"];
 
   const formatCurrency = (value) =>
-    `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+    `R$ ${Number(value || 0).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+    })}`;
 
   const meses = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -162,7 +110,9 @@ export default function Dashboard() {
               className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg focus:ring-2 focus:ring-amber-500"
             >
               {meses.map((m, i) => (
-                <option key={i + 1} value={i + 1}>{m}</option>
+                <option key={i + 1} value={i + 1}>
+                  {m}
+                </option>
               ))}
             </select>
 
@@ -240,7 +190,7 @@ export default function Dashboard() {
             <Tooltip formatter={(v) => formatCurrency(v)} />
             <Legend />
             <Bar dataKey="receitas" fill="#10b981" name="Receitas" />
-            <Bar dataKey="despesas" fill="#ef4444" name="Despesas" />
+            <Bar dataKey="variaveis" fill="#ef4444" name="Despesas Variáveis" />
             <Bar dataKey="fixas" fill="#facc15" name="Fixas" />
           </BarChart>
         </ResponsiveContainer>
@@ -371,7 +321,7 @@ function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
                 <input
                   type="checkbox"
                   checked={item.pago}
-                  onChange={() => togglePago(item.id)}
+                  onChange={() => togglePago(item.id, item.pago)}
                   className="form-checkbox text-green-500 rounded-md h-5 w-5"
                 />
                 <span className={`truncate ${item.pago ? "text-green-400 line-through" : "text-gray-200"}`}>
@@ -379,8 +329,15 @@ function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
                 </span>
               </label>
               <div className="text-right">
-                <p className="text-xs text-gray-400">{dayjs(item.data).format("DD/MM")}</p>
+                <p className="text-xs text-gray-400">
+                  {String(item.diaVencimento).padStart(2, "0")}/{dayjs().format("MM")}
+                </p>
                 <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
+                {item.pago && item.dataPagamento && (
+                  <p className="text-xs text-green-500 italic mt-1">
+                    Pago em {dayjs(item.dataPagamento).format("DD/MM/YYYY")}
+                  </p>
+                )}
               </div>
             </div>
           ))
