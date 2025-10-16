@@ -35,9 +35,11 @@ public class DashboardController {
 
     @GetMapping
     public Map<String, Object> getDashboard(@RequestParam int ano, @RequestParam int mes) {
+        long startAll = System.currentTimeMillis(); // medição total
+        Map<String, Object> dados = new HashMap<>();
+
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
-        Map<String, Object> dados = new HashMap<>();
 
         // 🔹 Totais principais
         BigDecimal receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
@@ -50,25 +52,22 @@ public class DashboardController {
         dados.put("totalFixas", despesasFixas);
         dados.put("saldo", saldo);
 
-        // 🔹 Agrupamentos principais
-        dados.put("categorias", lancamentoRepository.despesasPorCategoriaPeriodo(inicio, fim));
-        dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
-        dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
-
-        // 🔹 Busca única de pagamentos do mês (performance)
+        // 🔹 Busca única de pagamentos do mês (evita dezenas de queries)
+        long t1 = System.currentTimeMillis();
         List<DespesaFixaPagamento> pagamentosMes =
                 pagamentoRepository.findByMesReferenciaAndAnoReferencia(mes, ano);
-
         Map<Long, DespesaFixaPagamento> mapaPagamentos = pagamentosMes.stream()
                 .collect(Collectors.toMap(
                         p -> p.getDespesaFixa().getId(),
                         p -> p,
-                        (a, b) -> a // ignora duplicatas
+                        (a, b) -> a
                 ));
+        long t2 = System.currentTimeMillis();
 
         // 🔹 Monta lista de fixas com status
         List<DespesaFixa> despesasFixasList = despesaFixaRepository.findAll();
-        List<Map<String, Object>> fixasComStatus = despesasFixasList.stream().map(df -> {
+        List<Map<String, Object>> fixasComStatus = new ArrayList<>(despesasFixasList.size());
+        for (DespesaFixa df : despesasFixasList) {
             Map<String, Object> item = new HashMap<>();
             item.put("id", df.getId());
             item.put("descricao", df.getDescricao());
@@ -80,27 +79,27 @@ public class DashboardController {
             item.put("dataVencimento", dataVencimento);
 
             DespesaFixaPagamento pagamento = mapaPagamentos.get(df.getId());
-            boolean pago = pagamento != null && Boolean.TRUE.equals(pagamento.getPago());
-            LocalDate dataPagamento = pagamento != null ? pagamento.getDataPagamento() : null;
+            item.put("pago", pagamento != null && Boolean.TRUE.equals(pagamento.getPago()));
+            item.put("dataPagamento", pagamento != null ? pagamento.getDataPagamento() : null);
 
-            item.put("pago", pago);
-            item.put("dataPagamento", dataPagamento);
-
-            return item;
-        }).collect(Collectors.toList());
-
+            fixasComStatus.add(item);
+        }
         dados.put("despesasFixas", fixasComStatus);
+        long t3 = System.currentTimeMillis();
 
-        // 🔹 Agrupamentos de fixas
+        // 🔹 Agrupamentos principais (categorias, bancos, etc.)
+        dados.put("categorias", lancamentoRepository.despesasPorCategoriaPeriodo(inicio, fim));
+        dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
+        dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
+
         dados.put("fixasCategorias", despesaFixaRepository.despesasFixasPorCategoria(ano, mes));
         dados.put("fixasResponsaveis", despesaFixaRepository.despesasFixasPorResponsavel(ano, mes));
 
-        // 🔹 Receitas agrupadas
         dados.put("receitasCategorias", lancamentoRepository.receitasPorCategoriaPeriodo(inicio, fim));
         dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
-        // 🔹 Pré-calcula totais fixas por mês (evita 12 queries)
+        // 🔹 Pré-calcula totais fixas por mês (só 12 queries)
         Map<Integer, BigDecimal> fixasPorMes = new HashMap<>();
         for (int m = 1; m <= 12; m++) {
             LocalDate inicioM = LocalDate.of(ano, m, 1);
@@ -111,7 +110,6 @@ public class DashboardController {
         // 🔹 Comparativo mensal
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
         Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
-
         for (Object[] row : mensal) {
             int anoRow = ((Number) row[0]).intValue();
             int mesRow = ((Number) row[1]).intValue();
@@ -126,22 +124,18 @@ public class DashboardController {
             item.put("receitas", receitasRow);
             item.put("variaveis", variaveisRow);
             item.put("fixas", fixasRow);
-
             mapaMensal.put(anoRow + "-" + mesRow, item);
         }
 
-        // 🔹 Garante meses vazios
         for (int m = 1; m <= 12; m++) {
             String chave = ano + "-" + m;
-            if (!mapaMensal.containsKey(chave)) {
-                Map<String, Object> vazio = new HashMap<>();
-                vazio.put("ano", ano);
-                vazio.put("mes", m);
-                vazio.put("receitas", BigDecimal.ZERO);
-                vazio.put("variaveis", BigDecimal.ZERO);
-                vazio.put("fixas", fixasPorMes.getOrDefault(m, BigDecimal.ZERO));
-                mapaMensal.put(chave, vazio);
-            }
+            mapaMensal.putIfAbsent(chave, Map.of(
+                    "ano", ano,
+                    "mes", m,
+                    "receitas", BigDecimal.ZERO,
+                    "variaveis", BigDecimal.ZERO,
+                    "fixas", fixasPorMes.getOrDefault(m, BigDecimal.ZERO)
+            ));
         }
 
         List<Map<String, Object>> listaMensal = mapaMensal.values().stream()
@@ -149,19 +143,20 @@ public class DashboardController {
                 .toList();
         dados.put("mensal", listaMensal);
 
-        // 🔹 Últimos lançamentos — formato leve
+        // 🔹 Últimos lançamentos leves
         List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
-        List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", l.getId());
-            map.put("descricao", l.getDescricao());
-            map.put("valor", l.getValor());
-            map.put("data", l.getData());
-            map.put("categoria", l.getCategoria() != null ? l.getCategoria().getNome() : null);
-            map.put("responsavel", l.getResponsavel() != null ? l.getResponsavel().getNome() : null);
-            return map;
-        }).collect(Collectors.toList());
+        List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> Map.of(
+                "id", l.getId(),
+                "descricao", l.getDescricao(),
+                "valor", l.getValor(),
+                "data", l.getData(),
+                "categoria", l.getCategoria() != null ? l.getCategoria().getNome() : null,
+                "responsavel", l.getResponsavel() != null ? l.getResponsavel().getNome() : null
+        )).toList();
         dados.put("ultimosLancamentos", ultimosFormatados);
+
+        long endAll = System.currentTimeMillis();
+        System.out.println("[Dashboard] pagamentos=" + (t2 - t1) + "ms | fixas=" + (t3 - t2) + "ms | total=" + (endAll - startAll) + "ms");
 
         return dados;
     }
