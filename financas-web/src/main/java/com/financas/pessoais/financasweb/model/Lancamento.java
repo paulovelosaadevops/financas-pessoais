@@ -48,9 +48,17 @@ public class Lancamento {
     @Min(value = 1, message = "Número de parcelas deve ser pelo menos 1")
     private Integer parcelasFaltantes;
 
-    @Column(name = "meta")
-    private boolean meta = false;
+    // 🔹 Associação opcional com MetaFinanceira
+    @ManyToOne
+    @JoinColumn(name = "meta_id", nullable = true)
+    private MetaFinanceira meta;
 
-    public boolean isMeta() { return meta; }
-    public void setMeta(boolean meta) { this.meta = meta; }
+    // ✅ Getters e Setters corretos
+    public MetaFinanceira getMeta() {
+        return meta;
+    }
+
+    public void setMeta(MetaFinanceira meta) {
+        this.meta = meta;
+    }
 }
