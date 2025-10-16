@@ -330,7 +330,7 @@ function PagamentosGrupo({ titulo, lista, total, togglePago, formatCurrency }) {
               </label>
               <div className="text-right">
                 <p className="text-xs text-gray-400">
-                  {String(item.diaVencimento).padStart(2, "0")}/{dayjs().format("MM")}
+                  {dayjs(item.dataVencimento).format("DD/MM")}
                 </p>
                 <p className="text-sm font-medium">{formatCurrency(item.valor)}</p>
                 {item.pago && item.dataPagamento && (
