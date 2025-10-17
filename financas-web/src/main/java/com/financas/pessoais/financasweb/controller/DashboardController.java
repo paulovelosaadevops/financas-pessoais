@@ -34,33 +34,65 @@ public class DashboardController {
     }
 
     @GetMapping
-    public Map<String, Object> getDashboard(@RequestParam int ano, @RequestParam int mes) {
+    public Map<String, Object> getDashboard(
+            @RequestParam int ano,
+            @RequestParam int mes,
+            @RequestParam(defaultValue = "real") String modo
+    ) {
         long startAll = System.currentTimeMillis();
         Map<String, Object> dados = new HashMap<>();
 
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        // 🔹 Totais principais
-        BigDecimal receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
-        BigDecimal despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
-        BigDecimal despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
+        // 🔹 Filtro para iniciar operações a partir de novembro/2025
+        LocalDate inicioMinimo = LocalDate.of(2025, 11, 1);
+        if (inicio.isBefore(inicioMinimo)) {
+            Map<String, Object> vazio = new HashMap<>();
+            vazio.put("mensagem", "Dados disponíveis apenas a partir de novembro/2025");
+            vazio.put("totalReceitas", BigDecimal.ZERO);
+            vazio.put("totalDespesas", BigDecimal.ZERO);
+            vazio.put("totalFixas", BigDecimal.ZERO);
+            vazio.put("saldo", BigDecimal.ZERO);
+            vazio.put("categorias", Collections.emptyList());
+            vazio.put("responsaveis", Collections.emptyList());
+            vazio.put("bancos", Collections.emptyList());
+            vazio.put("fixasCategorias", Collections.emptyList());
+            vazio.put("fixasResponsaveis", Collections.emptyList());
+            vazio.put("receitasCategorias", Collections.emptyList());
+            vazio.put("receitasResponsaveis", Collections.emptyList());
+            vazio.put("receitasBancos", Collections.emptyList());
+            vazio.put("mensal", Collections.emptyList());
+            vazio.put("despesasFixas", Collections.emptyList());
+            vazio.put("ultimosLancamentos", Collections.emptyList());
+            return vazio;
+        }
 
-        // 🔹 Novos: movimentos de metas
+        // 🔹 Totais principais (modo real ou competência)
+        BigDecimal receitas;
+        BigDecimal despesasVariaveis;
+        BigDecimal despesasFixas;
+
+        if (modo.equalsIgnoreCase("competencia")) {
+            receitas = lancamentoRepository.totalReceitasCompetencia(ano, mes);
+            despesasVariaveis = lancamentoRepository.totalDespesasCompetencia(ano, mes);
+            despesasFixas = despesaFixaRepository.totalDespesasFixasCompetencia(ano, mes);
+        } else {
+            receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
+            despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
+            despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
+        }
+
+        // 🔹 Movimentos de metas (opcional)
         BigDecimal transferencias = lancamentoRepository.totalTransferenciasPeriodo(inicio, fim);
         BigDecimal resgates = lancamentoRepository.totalResgatesPeriodo(inicio, fim);
 
-        // 🔹 Saldo real — considerando metas
-        BigDecimal saldo = receitas
-                .subtract(despesasVariaveis.add(despesasFixas))
-                .subtract(transferencias)
-                .add(resgates);
+        // 🔹 Saldo básico sem metas (para não distorcer)
+        BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
 
         dados.put("totalReceitas", receitas);
         dados.put("totalDespesas", despesasVariaveis);
         dados.put("totalFixas", despesasFixas);
-        dados.put("totalTransferencias", transferencias);
-        dados.put("totalResgates", resgates);
         dados.put("saldo", saldo);
 
         // 🔹 Pagamentos do mês
@@ -203,19 +235,4 @@ public class DashboardController {
         pagamentoRepository.save(pagamento);
         return ResponseEntity.ok("Despesa marcada como " + (pago ? "paga" : "não paga") + " para " + mes + "/" + ano);
     }
-}
-
-@GetMapping
-public Map<String, Object> getDashboard(
-        @RequestParam int ano,
-        @RequestParam int mes,
-        @RequestParam(defaultValue = "real") String modo
-) { if (modo.equalsIgnoreCase("competencia")) {
-    receitas = lancamentoRepository.totalReceitasCompetencia(ano, mes);
-    despesasVariaveis = lancamentoRepository.totalDespesasCompetencia(ano, mes);
-    despesasFixas = despesaFixaRepository.totalDespesasFixasCompetencia(ano, mes);
-} else {
-    receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
-    despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
-    despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
 }
