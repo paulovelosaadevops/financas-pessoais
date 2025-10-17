@@ -45,7 +45,7 @@ public class DashboardController {
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        // 🔹 Filtro para iniciar operações a partir de novembro/2025
+        // 🔹 Filtro: só exibe dados a partir de novembro/2025
         LocalDate inicioMinimo = LocalDate.of(2025, 11, 1);
         if (inicio.isBefore(inicioMinimo)) {
             Map<String, Object> vazio = new HashMap<>();
@@ -74,20 +74,26 @@ public class DashboardController {
         BigDecimal despesasFixas;
 
         if (modo.equalsIgnoreCase("competencia")) {
-            receitas = lancamentoRepository.totalReceitasCompetencia(ano, mes);
-            despesasVariaveis = lancamentoRepository.totalDespesasCompetencia(ano, mes);
-            despesasFixas = despesaFixaRepository.totalDespesasFixasCompetencia(ano, mes);
+            // ⚠️ fallback: usa as mesmas consultas do modo real
+            receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
+            despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
+            despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
         } else {
             receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
             despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
             despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
         }
 
-        // 🔹 Movimentos de metas (opcional)
-        BigDecimal transferencias = lancamentoRepository.totalTransferenciasPeriodo(inicio, fim);
-        BigDecimal resgates = lancamentoRepository.totalResgatesPeriodo(inicio, fim);
+        // Evita NullPointer em operações
+        receitas = Optional.ofNullable(receitas).orElse(BigDecimal.ZERO);
+        despesasVariaveis = Optional.ofNullable(despesasVariaveis).orElse(BigDecimal.ZERO);
+        despesasFixas = Optional.ofNullable(despesasFixas).orElse(BigDecimal.ZERO);
 
-        // 🔹 Saldo básico sem metas (para não distorcer)
+        // 🔹 Movimentos de metas (opcional)
+        BigDecimal transferencias = Optional.ofNullable(lancamentoRepository.totalTransferenciasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
+        BigDecimal resgates = Optional.ofNullable(lancamentoRepository.totalResgatesPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
+
+        // 🔹 Saldo básico (sem metas)
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
 
         dados.put("totalReceitas", receitas);
@@ -97,8 +103,7 @@ public class DashboardController {
 
         // 🔹 Pagamentos do mês
         long t1 = System.currentTimeMillis();
-        List<DespesaFixaPagamento> pagamentosMes =
-                pagamentoRepository.findByMesReferenciaAndAnoReferencia(mes, ano);
+        List<DespesaFixaPagamento> pagamentosMes = pagamentoRepository.findByMesReferenciaAndAnoReferencia(mes, ano);
         Map<Long, DespesaFixaPagamento> mapaPagamentos = pagamentosMes.stream()
                 .collect(Collectors.toMap(
                         p -> p.getDespesaFixa().getId(),
@@ -107,7 +112,7 @@ public class DashboardController {
                 ));
         long t2 = System.currentTimeMillis();
 
-        // 🔹 Monta lista de fixas
+        // 🔹 Monta lista de fixas com status
         List<DespesaFixa> despesasFixasList = despesaFixaRepository.findAll();
         List<Map<String, Object>> fixasComStatus = new ArrayList<>(despesasFixasList.size());
         for (DespesaFixa df : despesasFixasList) {
@@ -147,7 +152,7 @@ public class DashboardController {
         for (int m = 1; m <= 12; m++) {
             LocalDate inicioM = LocalDate.of(ano, m, 1);
             LocalDate fimM = inicioM.withDayOfMonth(inicioM.lengthOfMonth());
-            fixasPorMes.put(m, despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM));
+            fixasPorMes.put(m, Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM)).orElse(BigDecimal.ZERO));
         }
 
         // 🔹 Inicializa o mapa mensal
