@@ -199,3 +199,11 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
                                                       @Param("fim") LocalDate fim);
 
 }
+
+@Query("SELECT COALESCE(SUM(l.valor), 0) FROM Lancamento l " +
+        "WHERE l.tipo = 'RECEITA' AND l.data BETWEEN :inicio AND :fim")
+BigDecimal totalReceitasPeriodo(LocalDate inicio, LocalDate fim);
+
+@Query("SELECT COALESCE(SUM(l.valor), 0) FROM Lancamento l " +
+        "WHERE l.tipo = 'RECEITA' AND l.mesCompetencia = :mes AND l.anoCompetencia = :ano")
+BigDecimal totalReceitasCompetencia(Integer ano, Integer mes);

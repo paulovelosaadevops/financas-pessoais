@@ -34,21 +34,21 @@ export default function Dashboard() {
 
   const [mes, setMes] = useState(dayjs().month() + 1);
   const [ano, setAno] = useState(dayjs().year());
+  const [modo, setModo] = useState("real"); // 🔹 novo estado: real ou competencia
 
   useEffect(() => {
     carregarResumo();
-  }, [mes, ano]);
+  }, [mes, ano, modo]);
 
   const carregarResumo = async () => {
     try {
-      const res = await api.get(`/dashboard?ano=${ano}&mes=${mes}`);
+      const res = await api.get(`/dashboard?ano=${ano}&mes=${mes}&modo=${modo}`);
       setResumo(res.data);
     } catch (err) {
       console.error("Erro ao carregar resumo:", err);
     }
   };
 
-  // 🔹 Marca ou desmarca pagamento e atualiza a lista
   const togglePago = async (id, estadoAtual) => {
     try {
       const novoEstado = !estadoAtual;
@@ -61,7 +61,6 @@ export default function Dashboard() {
     }
   };
 
-  // 🔹 Separação dos tipos
   const fixasCredito = resumo.despesasFixas.filter(
     (p) => p.tipoPagamento === "CREDITO"
   );
@@ -103,6 +102,7 @@ export default function Dashboard() {
             </p>
           </div>
 
+          {/* 🔹 Filtros de mês, ano e modo */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 mt-6 sm:mt-0 justify-center">
             <select
               value={mes}
@@ -122,8 +122,37 @@ export default function Dashboard() {
               onChange={(e) => setAno(Number(e.target.value))}
               className="bg-gray-800 border border-gray-700 text-gray-100 p-2 rounded-lg w-24 focus:ring-2 focus:ring-amber-500"
             />
+
+            {/* 🔹 Toggle modo (real / competência) */}
+            <div className="flex bg-gray-800 border border-gray-700 rounded-lg overflow-hidden text-sm">
+              <button
+                onClick={() => setModo("real")}
+                className={`px-3 py-2 transition-colors ${modo === "real"
+                    ? "bg-amber-500 text-black"
+                    : "text-gray-400 hover:text-gray-200"
+                  }`}
+              >
+                Fluxo Real
+              </button>
+              <button
+                onClick={() => setModo("competencia")}
+                className={`px-3 py-2 transition-colors ${modo === "competencia"
+                    ? "bg-amber-500 text-black"
+                    : "text-gray-400 hover:text-gray-200"
+                  }`}
+              >
+                Competência
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* 🔹 Texto explicativo */}
+        <p className="mt-4 text-gray-400 text-sm text-center sm:text-right italic">
+          {modo === "real"
+            ? "Mostrando receitas e despesas conforme a data de pagamento."
+            : "Mostrando receitas e despesas conforme o mês de competência."}
+        </p>
       </header>
 
       {/* Cards resumo */}

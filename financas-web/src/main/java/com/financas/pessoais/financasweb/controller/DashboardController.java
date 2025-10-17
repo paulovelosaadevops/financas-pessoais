@@ -204,3 +204,18 @@ public class DashboardController {
         return ResponseEntity.ok("Despesa marcada como " + (pago ? "paga" : "não paga") + " para " + mes + "/" + ano);
     }
 }
+
+@GetMapping
+public Map<String, Object> getDashboard(
+        @RequestParam int ano,
+        @RequestParam int mes,
+        @RequestParam(defaultValue = "real") String modo
+) { if (modo.equalsIgnoreCase("competencia")) {
+    receitas = lancamentoRepository.totalReceitasCompetencia(ano, mes);
+    despesasVariaveis = lancamentoRepository.totalDespesasCompetencia(ano, mes);
+    despesasFixas = despesaFixaRepository.totalDespesasFixasCompetencia(ano, mes);
+} else {
+    receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
+    despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
+    despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
+}

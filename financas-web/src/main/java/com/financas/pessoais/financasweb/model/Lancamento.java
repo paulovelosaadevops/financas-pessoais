@@ -53,12 +53,7 @@ public class Lancamento {
     @JoinColumn(name = "meta_id", nullable = true)
     private MetaFinanceira meta;
 
-    // ✅ Getters e Setters corretos
-    public MetaFinanceira getMeta() {
-        return meta;
-    }
+    private Integer mesCompetencia;
 
-    public void setMeta(MetaFinanceira meta) {
-        this.meta = meta;
-    }
+    private Integer anoCompetencia;
 }
