@@ -33,11 +33,11 @@ public class DashboardController {
         this.pagamentoRepository = pagamentoRepository;
     }
 
+    // ============================================================
+    // 🔹 DASHBOARD PRINCIPAL — modo real (único)
+    // ============================================================
     @GetMapping
-    public Map<String, Object> getDashboard(
-            @RequestParam int ano,
-            @RequestParam int mes
-    ) {
+    public Map<String, Object> getDashboard(@RequestParam int ano, @RequestParam int mes) {
         long startAll = System.currentTimeMillis();
         Map<String, Object> dados = new HashMap<>();
 
@@ -67,9 +67,10 @@ public class DashboardController {
         }
 
         // ============================================================
-        // 🔹 Totais principais (mantém toda sua lógica)
+        // 🔹 Totais principais (mantida lógica de salário fim de mês)
         // ============================================================
-        BigDecimal receitas = Optional.ofNullable(lancamentoRepository.totalReceitasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
+        BigDecimal receitas = Optional.ofNullable(lancamentoRepository.totalReceitasPeriodo(inicio, fim))
+                .orElse(BigDecimal.ZERO);
 
         LocalDate inicioBuscaSalario = inicio.minusDays(5);
         LocalDate fimBuscaSalario = fim.plusDays(5);
@@ -92,8 +93,10 @@ public class DashboardController {
         receitas = receitas.add(salarioFimMesAnterior);
         receitas = receitas.subtract(salarioFimMesAtual);
 
-        BigDecimal despesasVariaveis = Optional.ofNullable(lancamentoRepository.totalDespesasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
-        BigDecimal despesasFixas = Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim)).orElse(BigDecimal.ZERO);
+        BigDecimal despesasVariaveis = Optional.ofNullable(lancamentoRepository.totalDespesasPeriodo(inicio, fim))
+                .orElse(BigDecimal.ZERO);
+        BigDecimal despesasFixas = Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim))
+                .orElse(BigDecimal.ZERO);
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
 
         dados.put("totalReceitas", receitas);
@@ -102,11 +105,9 @@ public class DashboardController {
         dados.put("saldo", saldo);
 
         // ============================================================
-        // 🔹 Pagamentos do mês (corrigido)
+        // 🔹 Pagamentos do mês — fluxo real
         // ============================================================
-        List<DespesaFixaPagamento> pagamentosMes = new ArrayList<>();
-        pagamentosMes.addAll(pagamentoRepository.findByDataPagamentoBetween(inicio, fim));
-        pagamentosMes.addAll(pagamentoRepository.findByMesReferenciaAndAnoReferencia(mes, ano));
+        List<DespesaFixaPagamento> pagamentosMes = pagamentoRepository.findByDataPagamentoBetween(inicio, fim);
 
         Map<Long, DespesaFixaPagamento> mapaPagamentos = pagamentosMes.stream()
                 .filter(p -> p.getDespesaFixa() != null)
@@ -118,6 +119,7 @@ public class DashboardController {
 
         List<DespesaFixa> despesasFixasList = despesaFixaRepository.findAll();
         List<Map<String, Object>> fixasComStatus = new ArrayList<>(despesasFixasList.size());
+
         for (DespesaFixa df : despesasFixasList) {
             Map<String, Object> item = new HashMap<>();
             item.put("id", df.getId());
@@ -135,6 +137,7 @@ public class DashboardController {
 
             fixasComStatus.add(item);
         }
+
         dados.put("despesasFixas", fixasComStatus);
 
         // ============================================================
@@ -150,13 +153,14 @@ public class DashboardController {
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
         // ============================================================
-        // 🔹 Mensal (mantido)
+        // 🔹 Gráfico mensal (mantido)
         // ============================================================
         Map<Integer, BigDecimal> fixasPorMes = new HashMap<>();
         for (int m = 1; m <= 12; m++) {
             LocalDate inicioM = LocalDate.of(ano, m, 1);
             LocalDate fimM = inicioM.withDayOfMonth(inicioM.lengthOfMonth());
-            fixasPorMes.put(m, Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM)).orElse(BigDecimal.ZERO));
+            fixasPorMes.put(m, Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM))
+                    .orElse(BigDecimal.ZERO));
         }
 
         Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
@@ -217,7 +221,7 @@ public class DashboardController {
     }
 
     // ============================================================
-    // 🔹 Pagamento manual (mantido igual)
+    // 🔹 Pagamento manual de despesa fixa
     // ============================================================
     @PostMapping("/despesas-fixas/pagar/{id}")
     public ResponseEntity<?> pagarDespesaFixa(
