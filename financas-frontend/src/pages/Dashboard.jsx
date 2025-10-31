@@ -49,12 +49,34 @@ export default function Dashboard() {
     }
   };
 
+  // 🔹 Ajuste aplicado aqui:
   const togglePago = async (id, estadoAtual) => {
     try {
       const novoEstado = !estadoAtual;
+
+      // Atualiza instantaneamente na UI (efeito otimista)
+      setResumo((prev) => ({
+        ...prev,
+        despesasFixas: prev.despesasFixas.map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                pago: novoEstado,
+                dataPagamento: novoEstado ? dayjs().format("YYYY-MM-DD") : null,
+              }
+            : d
+        ),
+      }));
+
+      // Dispara requisição para backend
       await api.post(
         `/dashboard/despesas-fixas/pagar/${id}?mes=${mes}&ano=${ano}&pago=${novoEstado}`
       );
+
+      // Delay curto para evitar corrida de sincronização
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Atualiza resumo com dados do backend
       await carregarResumo();
     } catch (err) {
       console.error("Erro ao atualizar pagamento:", err);
@@ -127,19 +149,21 @@ export default function Dashboard() {
             <div className="flex bg-gray-800 border border-gray-700 rounded-lg overflow-hidden text-sm">
               <button
                 onClick={() => setModo("real")}
-                className={`px-3 py-2 transition-colors ${modo === "real"
+                className={`px-3 py-2 transition-colors ${
+                  modo === "real"
                     ? "bg-amber-500 text-black"
                     : "text-gray-400 hover:text-gray-200"
-                  }`}
+                }`}
               >
                 Fluxo Real
               </button>
               <button
                 onClick={() => setModo("competencia")}
-                className={`px-3 py-2 transition-colors ${modo === "competencia"
+                className={`px-3 py-2 transition-colors ${
+                  modo === "competencia"
                     ? "bg-amber-500 text-black"
                     : "text-gray-400 hover:text-gray-200"
-                  }`}
+                }`}
               >
                 Competência
               </button>
