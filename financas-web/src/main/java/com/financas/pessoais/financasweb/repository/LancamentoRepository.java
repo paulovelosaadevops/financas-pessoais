@@ -197,3 +197,16 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     List<Lancamento> findUltimosLancamentosPorPeriodo(@Param("inicio") LocalDate inicio,
                                                       @Param("fim") LocalDate fim);
 }
+
+@Query("""
+       SELECT COALESCE(SUM(l.valor), 0)
+         FROM Lancamento l
+        WHERE l.tipo = 'RECEITA'
+          AND (
+              (l.categoria.nome <> 'SALÁRIO' AND l.data BETWEEN :inicio AND :fim)
+              OR (l.categoria.nome = 'SALÁRIO' AND
+                 ((DAY(l.data) <= 15 AND l.data BETWEEN :inicio AND :fim)
+               OR (DAY(l.data) > 15 AND l.data BETWEEN :inicio.minusMonths(1) AND :fim.minusMonths(1))))
+          )
+       """)
+BigDecimal totalReceitasComSalarioLogica(LocalDate inicio, LocalDate fim);

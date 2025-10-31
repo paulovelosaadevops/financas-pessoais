@@ -67,11 +67,42 @@ public class DashboardController {
             return vazio;
         }
 
-        // 🔹 Totais principais
+        // ============================================================
+        // 🔹 Totais principais (com ajuste para salário fim de mês)
+        // ============================================================
+
         BigDecimal receitas = Optional.ofNullable(lancamentoRepository.totalReceitasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
+
+        // Busca receitas salariais num intervalo estendido (para capturar salário do fim do mês anterior)
+        LocalDate inicioBuscaSalario = inicio.minusDays(5);
+        LocalDate fimBuscaSalario = fim.plusDays(5);
+
+        List<Lancamento> receitasSalariais = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicioBuscaSalario, fimBuscaSalario)
+                .stream()
+                .filter(l -> l.getCategoria() != null && l.getCategoria().getNome().equalsIgnoreCase("SALÁRIO"))
+                .collect(Collectors.toList());
+
+        // 🔹 Salário recebido no fim do mês anterior (ex: 30/10 → usado em 11/2025)
+        BigDecimal salarioFimMesAnterior = receitasSalariais.stream()
+                .filter(l -> l.getData().isBefore(inicio) && l.getData().getDayOfMonth() > 15)
+                .map(Lancamento::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 🔹 Salário recebido no fim do mês atual (ex: 30/11 → usado em 12/2025)
+        BigDecimal salarioFimMesAtual = receitasSalariais.stream()
+                .filter(l -> l.getData().isAfter(inicio) && l.getData().getDayOfMonth() > 15)
+                .map(Lancamento::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Ajuste nos totais
+        receitas = receitas.add(salarioFimMesAnterior); // soma o salário do fim do mês anterior
+        receitas = receitas.subtract(salarioFimMesAtual); // remove o salário do fim do mês atual
+
+        // ============================================================
+        // 🔹 Despesas e saldo
+        // ============================================================
         BigDecimal despesasVariaveis = Optional.ofNullable(lancamentoRepository.totalDespesasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
         BigDecimal despesasFixas = Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim)).orElse(BigDecimal.ZERO);
-
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
 
         dados.put("totalReceitas", receitas);
@@ -79,7 +110,9 @@ public class DashboardController {
         dados.put("totalFixas", despesasFixas);
         dados.put("saldo", saldo);
 
+        // ============================================================
         // 🔹 Pagamentos do mês (baseado em data real de pagamento)
+        // ============================================================
         long t1 = System.currentTimeMillis();
         List<DespesaFixaPagamento> pagamentosMes = pagamentoRepository.findByDataPagamentoBetween(inicio, fim);
         Map<Long, DespesaFixaPagamento> mapaPagamentos = pagamentosMes.stream()
@@ -114,7 +147,9 @@ public class DashboardController {
         dados.put("despesasFixas", fixasComStatus);
         long t3 = System.currentTimeMillis();
 
+        // ============================================================
         // 🔹 Agrupamentos principais
+        // ============================================================
         dados.put("categorias", lancamentoRepository.despesasPorCategoriaPeriodo(inicio, fim));
         dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
         dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
@@ -126,7 +161,9 @@ public class DashboardController {
         dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
+        // ============================================================
         // 🔹 Pré-calcula totais fixas por mês
+        // ============================================================
         Map<Integer, BigDecimal> fixasPorMes = new HashMap<>();
         for (int m = 1; m <= 12; m++) {
             LocalDate inicioM = LocalDate.of(ano, m, 1);
@@ -134,10 +171,10 @@ public class DashboardController {
             fixasPorMes.put(m, Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM)).orElse(BigDecimal.ZERO));
         }
 
-        // 🔹 Inicializa o mapa mensal
+        // ============================================================
+        // 🔹 Inicializa o mapa mensal e agrega
+        // ============================================================
         Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
-
-        // 🔹 Adiciona meses existentes
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
         for (Object[] row : mensal) {
             int anoRow = ((Number) row[0]).intValue();
@@ -176,7 +213,9 @@ public class DashboardController {
         listaMensal.sort(Comparator.comparing(a -> (Integer) a.get("mes")));
         dados.put("mensal", listaMensal);
 
-        // 🔹 Últimos lançamentos leves
+        // ============================================================
+        // 🔹 Últimos lançamentos
+        // ============================================================
         List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
         List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> {
             Map<String, Object> map = new HashMap<>();
@@ -196,6 +235,9 @@ public class DashboardController {
         return dados;
     }
 
+    // ============================================================
+    // 🔹 Pagamento manual de despesa fixa
+    // ============================================================
     @PostMapping("/despesas-fixas/pagar/{id}")
     public ResponseEntity<?> pagarDespesaFixa(
             @PathVariable Long id,
