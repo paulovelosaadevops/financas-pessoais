@@ -20,6 +20,10 @@ public class DespesaFixaPagamento {
     private Boolean pago = false;
     private LocalDate dataPagamento;
 
+    // 🔹 Novo: referência de qual salário pagou essa despesa
+    private Integer mesReferenciaSalario;
+    private Integer anoReferenciaSalario;
+
     // Getters e Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -38,4 +42,10 @@ public class DespesaFixaPagamento {
 
     public LocalDate getDataPagamento() { return dataPagamento; }
     public void setDataPagamento(LocalDate dataPagamento) { this.dataPagamento = dataPagamento; }
+
+    public Integer getMesReferenciaSalario() { return mesReferenciaSalario; }
+    public void setMesReferenciaSalario(Integer mesReferenciaSalario) { this.mesReferenciaSalario = mesReferenciaSalario; }
+
+    public Integer getAnoReferenciaSalario() { return anoReferenciaSalario; }
+    public void setAnoReferenciaSalario(Integer anoReferenciaSalario) { this.anoReferenciaSalario = anoReferenciaSalario; }
 }

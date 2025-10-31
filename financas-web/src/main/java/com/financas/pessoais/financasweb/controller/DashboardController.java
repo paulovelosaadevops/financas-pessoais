@@ -36,8 +36,7 @@ public class DashboardController {
     @GetMapping
     public Map<String, Object> getDashboard(
             @RequestParam int ano,
-            @RequestParam int mes,
-            @RequestParam(defaultValue = "real") String modo
+            @RequestParam int mes
     ) {
         long startAll = System.currentTimeMillis();
         Map<String, Object> dados = new HashMap<>();
@@ -68,32 +67,11 @@ public class DashboardController {
             return vazio;
         }
 
-        // 🔹 Totais principais (modo real ou competência)
-        BigDecimal receitas;
-        BigDecimal despesasVariaveis;
-        BigDecimal despesasFixas;
+        // 🔹 Totais principais
+        BigDecimal receitas = Optional.ofNullable(lancamentoRepository.totalReceitasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
+        BigDecimal despesasVariaveis = Optional.ofNullable(lancamentoRepository.totalDespesasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
+        BigDecimal despesasFixas = Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim)).orElse(BigDecimal.ZERO);
 
-        if (modo.equalsIgnoreCase("competencia")) {
-            // ⚠️ fallback: usa as mesmas consultas do modo real
-            receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
-            despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
-            despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
-        } else {
-            receitas = lancamentoRepository.totalReceitasPeriodo(inicio, fim);
-            despesasVariaveis = lancamentoRepository.totalDespesasPeriodo(inicio, fim);
-            despesasFixas = despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim);
-        }
-
-        // Evita NullPointer em operações
-        receitas = Optional.ofNullable(receitas).orElse(BigDecimal.ZERO);
-        despesasVariaveis = Optional.ofNullable(despesasVariaveis).orElse(BigDecimal.ZERO);
-        despesasFixas = Optional.ofNullable(despesasFixas).orElse(BigDecimal.ZERO);
-
-        // 🔹 Movimentos de metas (opcional)
-        BigDecimal transferencias = Optional.ofNullable(lancamentoRepository.totalTransferenciasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
-        BigDecimal resgates = Optional.ofNullable(lancamentoRepository.totalResgatesPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
-
-        // 🔹 Saldo básico (sem metas)
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
 
         dados.put("totalReceitas", receitas);
@@ -101,10 +79,11 @@ public class DashboardController {
         dados.put("totalFixas", despesasFixas);
         dados.put("saldo", saldo);
 
-        // 🔹 Pagamentos do mês
+        // 🔹 Pagamentos do mês (baseado em data real de pagamento)
         long t1 = System.currentTimeMillis();
-        List<DespesaFixaPagamento> pagamentosMes = pagamentoRepository.findByMesReferenciaAndAnoReferencia(mes, ano);
+        List<DespesaFixaPagamento> pagamentosMes = pagamentoRepository.findByDataPagamentoBetween(inicio, fim);
         Map<Long, DespesaFixaPagamento> mapaPagamentos = pagamentosMes.stream()
+                .filter(p -> p.getDespesaFixa() != null)
                 .collect(Collectors.toMap(
                         p -> p.getDespesaFixa().getId(),
                         p -> p,

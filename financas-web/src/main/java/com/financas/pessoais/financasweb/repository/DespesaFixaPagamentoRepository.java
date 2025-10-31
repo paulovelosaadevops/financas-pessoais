@@ -5,6 +5,7 @@ import com.financas.pessoais.financasweb.model.DespesaFixaPagamento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +16,15 @@ public interface DespesaFixaPagamentoRepository extends JpaRepository<DespesaFix
             DespesaFixa despesaFixa, Integer mesReferencia, Integer anoReferencia
     );
 
-    // 🔹 Adicione esta nova linha abaixo:
-    List<DespesaFixaPagamento> findByMesReferenciaAndAnoReferencia(Integer mesReferencia, Integer anoReferencia);
+    List<DespesaFixaPagamento> findByMesReferenciaAndAnoReferencia(
+            Integer mesReferencia, Integer anoReferencia
+    );
+
+    // 🔹 Mantido apenas por compatibilidade (sem uso no fluxo real)
+    List<DespesaFixaPagamento> findByMesReferenciaSalarioAndAnoReferenciaSalario(
+            Integer mesReferenciaSalario, Integer anoReferenciaSalario
+    );
+
+    // ✅ Novo método: busca por data real de pagamento
+    List<DespesaFixaPagamento> findByDataPagamentoBetween(LocalDate inicio, LocalDate fim);
 }
