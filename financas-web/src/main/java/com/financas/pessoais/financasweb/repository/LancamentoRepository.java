@@ -207,19 +207,23 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     );
 
     // ==============================================================
-    // NOVO — Total de receitas com lógica especial de salário fim de mês
+    // NOVO — Total de receitas com lógica especial de salário fim de mês (corrigido)
     // ==============================================================
+
     @Query("""
        SELECT COALESCE(SUM(l.valor), 0)
          FROM Lancamento l
         WHERE l.tipo = 'RECEITA'
           AND (
               (l.categoria.nome <> 'SALÁRIO' AND l.data BETWEEN :inicio AND :fim)
-              OR (l.categoria.nome = 'SALÁRIO' AND
-                 ((DAY(l.data) <= 15 AND l.data BETWEEN :inicio AND :fim)
-               OR (DAY(l.data) > 15 AND l.data BETWEEN :inicio.minusMonths(1) AND :fim.minusMonths(1))))
+              OR (l.categoria.nome = 'SALÁRIO' AND l.data BETWEEN :inicioAjustado AND :fimAjustado)
           )
        """)
-    BigDecimal totalReceitasComSalarioLogica(LocalDate inicio, LocalDate fim);
+    BigDecimal totalReceitasComSalarioLogica(
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim,
+            @Param("inicioAjustado") LocalDate inicioAjustado,
+            @Param("fimAjustado") LocalDate fimAjustado
+    );
 
 }
