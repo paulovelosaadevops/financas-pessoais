@@ -12,19 +12,16 @@ import java.util.Optional;
 @Repository
 public interface DespesaFixaPagamentoRepository extends JpaRepository<DespesaFixaPagamento, Long> {
 
+    // 🔹 Busca pagamento específico por despesa, mês e ano
     Optional<DespesaFixaPagamento> findByDespesaFixaAndMesReferenciaAndAnoReferencia(
             DespesaFixa despesaFixa, Integer mesReferencia, Integer anoReferencia
     );
 
+    // 🔹 Busca todos os pagamentos por mês/ano de referência
     List<DespesaFixaPagamento> findByMesReferenciaAndAnoReferencia(
             Integer mesReferencia, Integer anoReferencia
     );
 
-    // 🔹 Mantido apenas por compatibilidade (sem uso no fluxo real)
-    List<DespesaFixaPagamento> findByMesReferenciaSalarioAndAnoReferenciaSalario(
-            Integer mesReferenciaSalario, Integer anoReferenciaSalario
-    );
-
-    // ✅ Novo método: busca por data real de pagamento
+    // 🔹 Busca por data real de pagamento (para exibição do histórico no mês certo)
     List<DespesaFixaPagamento> findByDataPagamentoBetween(LocalDate inicio, LocalDate fim);
 }

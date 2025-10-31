@@ -44,9 +44,8 @@ public class DashboardController {
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        // 🔹 Filtro: só exibe dados a partir de novembro/2025
-        LocalDate inicioMinimo = LocalDate.of(2025, 11, 1);
-        if (inicio.isBefore(inicioMinimo)) {
+        // 🔹 Bloqueia meses anteriores a nov/2025
+        if (inicio.isBefore(LocalDate.of(2025, 11, 1))) {
             Map<String, Object> vazio = new HashMap<>();
             vazio.put("mensagem", "Dados disponíveis apenas a partir de novembro/2025");
             vazio.put("totalReceitas", BigDecimal.ZERO);
@@ -68,12 +67,10 @@ public class DashboardController {
         }
 
         // ============================================================
-        // 🔹 Totais principais (com ajuste para salário fim de mês)
+        // 🔹 Totais principais (mantém toda sua lógica)
         // ============================================================
-
         BigDecimal receitas = Optional.ofNullable(lancamentoRepository.totalReceitasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
 
-        // Busca receitas salariais num intervalo estendido (para capturar salário do fim do mês anterior)
         LocalDate inicioBuscaSalario = inicio.minusDays(5);
         LocalDate fimBuscaSalario = fim.plusDays(5);
 
@@ -82,25 +79,19 @@ public class DashboardController {
                 .filter(l -> l.getCategoria() != null && l.getCategoria().getNome().equalsIgnoreCase("SALÁRIO"))
                 .collect(Collectors.toList());
 
-        // 🔹 Salário recebido no fim do mês anterior (ex: 30/10 → usado em 11/2025)
         BigDecimal salarioFimMesAnterior = receitasSalariais.stream()
                 .filter(l -> l.getData().isBefore(inicio) && l.getData().getDayOfMonth() > 15)
                 .map(Lancamento::getValor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 🔹 Salário recebido no fim do mês atual (ex: 30/11 → usado em 12/2025)
         BigDecimal salarioFimMesAtual = receitasSalariais.stream()
                 .filter(l -> l.getData().isAfter(inicio) && l.getData().getDayOfMonth() > 15)
                 .map(Lancamento::getValor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Ajuste nos totais
-        receitas = receitas.add(salarioFimMesAnterior); // soma o salário do fim do mês anterior
-        receitas = receitas.subtract(salarioFimMesAtual); // remove o salário do fim do mês atual
+        receitas = receitas.add(salarioFimMesAnterior);
+        receitas = receitas.subtract(salarioFimMesAtual);
 
-        // ============================================================
-        // 🔹 Despesas e saldo
-        // ============================================================
         BigDecimal despesasVariaveis = Optional.ofNullable(lancamentoRepository.totalDespesasPeriodo(inicio, fim)).orElse(BigDecimal.ZERO);
         BigDecimal despesasFixas = Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicio, fim)).orElse(BigDecimal.ZERO);
         BigDecimal saldo = receitas.subtract(despesasVariaveis.add(despesasFixas));
@@ -111,20 +102,20 @@ public class DashboardController {
         dados.put("saldo", saldo);
 
         // ============================================================
-        // 🔹 Pagamentos do mês (baseado em data real de pagamento)
+        // 🔹 Pagamentos do mês (corrigido)
         // ============================================================
-        long t1 = System.currentTimeMillis();
-        List<DespesaFixaPagamento> pagamentosMes = pagamentoRepository.findByDataPagamentoBetween(inicio, fim);
+        List<DespesaFixaPagamento> pagamentosMes = new ArrayList<>();
+        pagamentosMes.addAll(pagamentoRepository.findByDataPagamentoBetween(inicio, fim));
+        pagamentosMes.addAll(pagamentoRepository.findByMesReferenciaAndAnoReferencia(mes, ano));
+
         Map<Long, DespesaFixaPagamento> mapaPagamentos = pagamentosMes.stream()
                 .filter(p -> p.getDespesaFixa() != null)
                 .collect(Collectors.toMap(
                         p -> p.getDespesaFixa().getId(),
                         p -> p,
-                        (a, b) -> a
+                        (a, b) -> a.getDataPagamento() != null ? a : b
                 ));
-        long t2 = System.currentTimeMillis();
 
-        // 🔹 Monta lista de fixas com status
         List<DespesaFixa> despesasFixasList = despesaFixaRepository.findAll();
         List<Map<String, Object>> fixasComStatus = new ArrayList<>(despesasFixasList.size());
         for (DespesaFixa df : despesasFixasList) {
@@ -145,24 +136,21 @@ public class DashboardController {
             fixasComStatus.add(item);
         }
         dados.put("despesasFixas", fixasComStatus);
-        long t3 = System.currentTimeMillis();
 
         // ============================================================
-        // 🔹 Agrupamentos principais
+        // 🔹 Agrupamentos (mantidos)
         // ============================================================
         dados.put("categorias", lancamentoRepository.despesasPorCategoriaPeriodo(inicio, fim));
         dados.put("responsaveis", lancamentoRepository.despesasPorResponsavelPeriodo(inicio, fim));
         dados.put("bancos", lancamentoRepository.despesasPorBancoPeriodo(inicio, fim));
-
         dados.put("fixasCategorias", despesaFixaRepository.despesasFixasPorCategoria(ano, mes));
         dados.put("fixasResponsaveis", despesaFixaRepository.despesasFixasPorResponsavel(ano, mes));
-
         dados.put("receitasCategorias", lancamentoRepository.receitasPorCategoriaPeriodo(inicio, fim));
         dados.put("receitasResponsaveis", lancamentoRepository.receitasPorResponsavelPeriodo(inicio, fim));
         dados.put("receitasBancos", lancamentoRepository.receitasPorBancoPeriodo(inicio, fim));
 
         // ============================================================
-        // 🔹 Pré-calcula totais fixas por mês
+        // 🔹 Mensal (mantido)
         // ============================================================
         Map<Integer, BigDecimal> fixasPorMes = new HashMap<>();
         for (int m = 1; m <= 12; m++) {
@@ -171,15 +159,11 @@ public class DashboardController {
             fixasPorMes.put(m, Optional.ofNullable(despesaFixaRepository.totalDespesasFixasAtivas(inicioM, fimM)).orElse(BigDecimal.ZERO));
         }
 
-        // ============================================================
-        // 🔹 Inicializa o mapa mensal e agrega
-        // ============================================================
         Map<String, Map<String, Object>> mapaMensal = new HashMap<>();
         List<Object[]> mensal = lancamentoRepository.receitasVsDespesasMensal();
         for (Object[] row : mensal) {
             int anoRow = ((Number) row[0]).intValue();
             int mesRow = ((Number) row[1]).intValue();
-
             BigDecimal receitasRow = row[2] != null ? new BigDecimal(row[2].toString()) : BigDecimal.ZERO;
             BigDecimal variaveisRow = row[3] != null ? new BigDecimal(row[3].toString()) : BigDecimal.ZERO;
             BigDecimal fixasRow = fixasPorMes.getOrDefault(mesRow, BigDecimal.ZERO);
@@ -194,7 +178,6 @@ public class DashboardController {
             mapaMensal.put(anoRow + "-" + mesRow, item);
         }
 
-        // 🔹 Garante todos os meses do ano
         for (int m = 1; m <= 12; m++) {
             String chave = ano + "-" + m;
             if (!mapaMensal.containsKey(chave)) {
@@ -208,13 +191,12 @@ public class DashboardController {
             }
         }
 
-        // 🔹 Converte em lista ordenada
         List<Map<String, Object>> listaMensal = new ArrayList<>(mapaMensal.values());
         listaMensal.sort(Comparator.comparing(a -> (Integer) a.get("mes")));
         dados.put("mensal", listaMensal);
 
         // ============================================================
-        // 🔹 Últimos lançamentos
+        // 🔹 Últimos lançamentos (inalterado)
         // ============================================================
         List<Lancamento> ultimos = lancamentoRepository.findUltimosLancamentosPorPeriodo(inicio, fim);
         List<Map<String, Object>> ultimosFormatados = ultimos.stream().map(l -> {
@@ -230,13 +212,12 @@ public class DashboardController {
         dados.put("ultimosLancamentos", ultimosFormatados);
 
         long endAll = System.currentTimeMillis();
-        System.out.println("[Dashboard] pagamentos=" + (t2 - t1) + "ms | fixas=" + (t3 - t2) + "ms | total=" + (endAll - startAll) + "ms");
-
+        System.out.println("[Dashboard] total=" + (endAll - startAll) + "ms");
         return dados;
     }
 
     // ============================================================
-    // 🔹 Pagamento manual de despesa fixa
+    // 🔹 Pagamento manual (mantido igual)
     // ============================================================
     @PostMapping("/despesas-fixas/pagar/{id}")
     public ResponseEntity<?> pagarDespesaFixa(
