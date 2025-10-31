@@ -15,6 +15,7 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     // ==============================================================
     // NOVOS MÉTODOS — Filtro por período (para Dashboard)
     // ==============================================================
+
     @Query("""
            SELECT COALESCE(SUM(l.valor),0)
              FROM Lancamento l
@@ -31,7 +32,7 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
            """)
     BigDecimal totalDespesasPeriodo(LocalDate inicio, LocalDate fim);
 
-    // 🔹 NOVO: total transferido para metas no período
+    // 🔹 Total transferido para metas no período
     @Query("""
            SELECT COALESCE(SUM(l.valor),0)
              FROM Lancamento l
@@ -40,7 +41,7 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
            """)
     BigDecimal totalTransferenciasPeriodo(LocalDate inicio, LocalDate fim);
 
-    // 🔹 NOVO: total resgatado de metas no período
+    // 🔹 Total resgatado de metas no período
     @Query("""
            SELECT COALESCE(SUM(l.valor),0)
              FROM Lancamento l
@@ -48,6 +49,10 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
               AND l.data BETWEEN :inicio AND :fim
            """)
     BigDecimal totalResgatesPeriodo(LocalDate inicio, LocalDate fim);
+
+    // ==============================================================
+    // AGRUPAMENTOS — Despesas e Receitas por categoria/responsável/conta
+    // ==============================================================
 
     @Query("""
            SELECT new com.financas.pessoais.financasweb.dto.AgrupamentoDTO(c.nome, COALESCE(SUM(l.valor),0))
@@ -104,8 +109,9 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     List<AgrupamentoDTO> receitasPorBancoPeriodo(LocalDate inicio, LocalDate fim);
 
     // ==============================================================
-    // ANTIGOS MÉTODOS — Mantidos para compatibilidade com controllers antigos
+    // ANTIGOS MÉTODOS — Mantidos para compatibilidade
     // ==============================================================
+
     @Query("""
            SELECT COALESCE(SUM(l.valor),0)
              FROM Lancamento l
@@ -155,8 +161,9 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     List<Lancamento> ultimosLancamentos();
 
     // ==============================================================
-    // Métodos auxiliares
+    // MÉTODOS AUXILIARES
     // ==============================================================
+
     @Query("""
        SELECT l FROM Lancamento l
         WHERE (:ano IS NULL OR YEAR(l.data) = :ano)
@@ -185,7 +192,7 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
     FROM Lancamento l
     GROUP BY YEAR(l.data), MONTH(l.data)
     ORDER BY ano, mes
-""")
+    """)
     List<Object[]> receitasVsDespesasMensal();
 
     @Query("""
@@ -193,12 +200,16 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
       FROM Lancamento l
      WHERE l.data BETWEEN :inicio AND :fim
      ORDER BY l.data DESC
-""")
-    List<Lancamento> findUltimosLancamentosPorPeriodo(@Param("inicio") LocalDate inicio,
-                                                      @Param("fim") LocalDate fim);
-}
+    """)
+    List<Lancamento> findUltimosLancamentosPorPeriodo(
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim
+    );
 
-@Query("""
+    // ==============================================================
+    // NOVO — Total de receitas com lógica especial de salário fim de mês
+    // ==============================================================
+    @Query("""
        SELECT COALESCE(SUM(l.valor), 0)
          FROM Lancamento l
         WHERE l.tipo = 'RECEITA'
@@ -209,4 +220,6 @@ public interface LancamentoRepository extends JpaRepository<Lancamento, Long> {
                OR (DAY(l.data) > 15 AND l.data BETWEEN :inicio.minusMonths(1) AND :fim.minusMonths(1))))
           )
        """)
-BigDecimal totalReceitasComSalarioLogica(LocalDate inicio, LocalDate fim);
+    BigDecimal totalReceitasComSalarioLogica(LocalDate inicio, LocalDate fim);
+
+}
